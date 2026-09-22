@@ -16,5 +16,7 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/@:path*"],
+  // "@" isn't a legal matcher token, so we match everything and filter
+  // inside; _next internals are skipped automatically by Next.
+  matcher: ["/((?!_next/).*)"],
 };
