@@ -15,8 +15,6 @@ import {
   parseEventLogs,
   type Hash,
   type Address,
-  type PublicClient,
-  type WalletClient,
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { Chain, Addresses } from "viem/tempo";
@@ -36,13 +34,13 @@ export const PATH_USD: Address = Addresses.pathUsd; // 0x20c0…0000
 export const TOKEN_DECIMALS = 6; // pathUSD = 6 decimals → micro-USD units
 export const TOKEN_SYMBOL = "pathUSD";
 
-export const publicClient: PublicClient = createPublicClient({
+export const publicClient = createPublicClient({
   chain,
   transport: http(),
 });
 
 // Optional platform wallet (testnet fee sponsorship / demos)
-export function platformWalletClient(): WalletClient | null {
+export function platformWalletClient() {
   const key = process.env.TEMPO_SPONSOR_KEY as `0x${string}` | undefined;
   if (!key) return null;
   return createWalletClient({
