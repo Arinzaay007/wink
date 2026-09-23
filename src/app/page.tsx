@@ -89,7 +89,7 @@ export default async function Home() {
           Wink is the <strong className="text-ink-100">name layer for payments</strong>.
           Claim your @handle and receive tips, shop sales, and wages in
           stablecoins — settled on Tempo in under a second. No wallet
-          addresses. No fees. Just a wink.
+          addresses. 0% platform fee. Just a wink.
         </p>
         <div className="mt-8 flex items-center justify-center gap-3">
           <Link href="/claim" className="btn-primary text-base">
