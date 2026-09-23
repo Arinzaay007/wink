@@ -34,6 +34,11 @@ export const PATH_USD: Address = Addresses.pathUsd; // 0x20c0…0000
 export const TOKEN_DECIMALS = 6; // pathUSD = 6 decimals → micro-USD units
 export const TOKEN_SYMBOL = "pathUSD";
 
+export const EXPLORER_URL =
+  TEMPO_NETWORK === "mainnet"
+    ? "https://explore.tempo.xyz"
+    : "https://explore.testnet.tempo.xyz";
+
 export const publicClient = createPublicClient({
   chain,
   transport: http(),
