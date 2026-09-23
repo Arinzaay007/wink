@@ -102,7 +102,9 @@ export const wallets = pgTable(
     userId: text("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
-    address: text("address").notNull(), // 0x…, checksummed
+    address: text("address").notNull(), // 0x… (EVM) or base58 (Solana)
+    // multichain-ready from day one: one handle → many destinations
+    chain: text("chain").notNull().default("tempo"), // tempo|base|ethereum|solana|…
     kind: walletKindEnum("kind").notNull().default("inapp"),
     label: text("label"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
