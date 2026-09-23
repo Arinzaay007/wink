@@ -114,8 +114,9 @@ cp .env.example .env        # DATABASE_URL, SESSION_SECRET, TEMPO_NETWORK=testne
 npm run db:push             # drizzle schema → Postgres
 npm run dev                 # app on :3000
 
-npm test                    # 53 automated tests (handles, memos, MPP, relay, payroll, Telegram)
+npm test                    # 60 automated tests (handles, memos, MPP, relay, payroll, Telegram, reconciler)
 npm run rebuild             # restore the whole demo world after a wiped sandbox
+npm run reconcile           # safety net: confirm any stranded `pending` transfer on-chain
 
 # optional Telegram notifier — set TELEGRAM_BOT_TOKEN (from @BotFather) in .env
 npm run bot                 # "you've been winked 😉" DMs on every confirmed transfer

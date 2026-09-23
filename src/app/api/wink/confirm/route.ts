@@ -2,8 +2,9 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { eq } from "drizzle-orm";
 import { getDb } from "@/db";
-import { transfers, ledgerEntries, payRequests } from "@/db/schema";
+import { transfers } from "@/db/schema";
 import { verifyTransferOnChain } from "@/lib/tempo";
+import { confirmTransfer } from "@/lib/confirmPipeline";
 import type { Address, Hash } from "viem";
 
 export const runtime = "nodejs";
@@ -47,38 +48,12 @@ export async function POST(req: Request) {
     );
   }
 
-  // on-chain facts match → confirm + write the double-entry ledger rows
-  await db
-    .update(transfers)
-    .set({
-      status: "confirmed",
-      txHash: parsed.data.txHash,
-      fromAddress: result.from ?? transfer.fromAddress,
-      confirmedAt: new Date(),
-    })
-    .where(eq(transfers.id, transfer.id));
-
-  await db.insert(ledgerEntries).values([
-    {
-      transferId: transfer.id,
-      account: `recipient:${transfer.toUserId}`,
-      amountMicro: transfer.amountMicro,
-    },
-    // platform fee split = 0 for now; the row shape is already in place
-    // so a fee can be switched on without schema changes.
-  ]);
-
-  // settling a pay request → close it, link the transfer
-  if (transfer.payRequestId) {
-    await db
-      .update(payRequests)
-      .set({
-        status: "paid",
-        transferId: transfer.id,
-        resolvedAt: new Date(),
-      })
-      .where(eq(payRequests.id, transfer.payRequestId));
-  }
+  // on-chain facts match → confirm via the shared write-path
+  // (same idempotent ledger write the reconciler uses)
+  await confirmTransfer(db, transfer, {
+    txHash: parsed.data.txHash,
+    from: result.from,
+  });
 
   return NextResponse.json({
     status: "confirmed",

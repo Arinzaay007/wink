@@ -2,7 +2,7 @@
   "name": "wink",
   "version": "0.1.0",
   "private": true,
-  "description": "Wink — the name layer for payments. Anyone, anywhere, paid with a wink. Built on Tempo.",
+  "description": "Wink \u2014 the name layer for payments. Anyone, anywhere, paid with a wink. Built on Tempo.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -15,7 +15,8 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "rebuild": "bash scripts/rebuild-demo.sh",
-    "bot": "tsx src/bot/index.ts"
+    "bot": "tsx src/bot/index.ts",
+    "reconcile": "tsx scripts/reconcile-loop.ts"
   },
   "dependencies": {
     "dotenv": "^18.0.3",
