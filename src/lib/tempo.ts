@@ -210,6 +210,52 @@ export function formatMicro(micro: number): string {
 const ERC20_TRANSFER_TOPIC = keccak256(stringToBytes("Transfer(address,address,uint256)"));
 
 /**
+ * MPP / open payment check (memo-agnostic): verify a TransferWithMemo
+ * event credited `to` with EXACTLY `amountMicro`, whatever memo the
+ * payer chose. Returns the payer and decoded memo for the ledger.
+ */
+export async function verifyPaymentOnChain(
+  txHash: Hash,
+  expect: { to: Address; amountMicro: number }
+): Promise<
+  | { ok: true; from: Address; memo: string; blockNumber: bigint }
+  | { ok: false; reason: string }
+> {
+  let receipt;
+  try {
+    receipt = await publicClient.getTransactionReceipt({ hash: txHash });
+  } catch {
+    return { ok: false, reason: "receipt-not-found" };
+  }
+  if (receipt.status !== "success") return { ok: false, reason: "tx-reverted" };
+
+  const logs = parseEventLogs({
+    logs: receipt.logs,
+    abi: TIP20_ABI,
+    eventName: "TransferWithMemo",
+  });
+  const match = logs.find((l) => {
+    const a = l.args as unknown as { to: Address; value: bigint };
+    return (
+      a.to.toLowerCase() === expect.to.toLowerCase() &&
+      Number(a.value) === expect.amountMicro
+    );
+  });
+  if (!match) return { ok: false, reason: "no-matching-payment" };
+  const args = match.args as unknown as {
+    from: Address;
+    value: bigint;
+    memo: `0x${string}`;
+  };
+  return {
+    ok: true,
+    from: args.from,
+    memo: decodeMemo(args.memo),
+    blockNumber: receipt.blockNumber,
+  };
+}
+
+/**
  * Cross-chain arrival check (doctrine #5): after a bridge solver claims it
  * filled a payment on Tempo, we verify independently — scan the
  * destination tx for an ERC-20 Transfer crediting the recipient with at

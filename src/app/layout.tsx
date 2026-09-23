@@ -36,6 +36,9 @@ export default function RootLayout({
               <Link href="/dashboard" className="text-ink-300 hover:text-ink-100">
                 Dashboard
               </Link>
+              <Link href="/agents" className="hidden text-ink-300 hover:text-ink-100 sm:inline">
+                Agents
+              </Link>
               <Link href="/claim" className="btn-primary !py-2 text-xs">
                 Claim your handle
               </Link>
