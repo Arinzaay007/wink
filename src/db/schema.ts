@@ -295,6 +295,24 @@ export const telegramLinkCodes = pgTable(
   })
 );
 
+/** Email one-time codes for sign-in / claim (the §9C auth gate). */
+export const authCodes = pgTable(
+  "auth_codes",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    email: text("email").notNull(),
+    // sha256 hex of the 6-digit code — plaintext never touches storage
+    codeHash: text("code_hash").notNull(),
+    expiresAt: timestamp("expires_at").notNull(),
+    attempts: bigint("attempts", { mode: "number" }).notNull().default(0),
+    consumedAt: timestamp("consumed_at"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => ({
+    emailIdx: index("auth_codes_email_idx").on(t.email),
+  })
+);
+
 export type User = typeof users.$inferSelect;
 export type Username = typeof usernames.$inferSelect;
 export type Wallet = typeof wallets.$inferSelect;
