@@ -38,11 +38,20 @@ export default function TipForm({
   handle,
   recipientName,
   eventSlug,
+  mode = "wink",
+  payCodeSlug,
+  fixedAmountMicro,
+  invoiceRef,
 }: {
   handle: string;
   recipientName: string;
   eventSlug?: string;
+  mode?: "wink" | "pay";
+  payCodeSlug?: string;
+  fixedAmountMicro?: number;
+  invoiceRef?: string;
 }) {
+  const isPay = mode === "pay";
   const [hasOwn, setHasOwn] = useState(false);
   const [useOwn, setUseOwn] = useState(false);
   const [ownAddr, setOwnAddr] = useState<Address | null>(null);
@@ -50,7 +59,9 @@ export default function TipForm({
 
   const [wallet, setWallet] = useState<DemoWallet | null>(null);
   const [balance, setBalance] = useState<number | null>(null);
-  const [dollars, setDollars] = useState<string>("3");
+  const [dollars, setDollars] = useState<string>(
+    fixedAmountMicro ? String(fixedAmountMicro / 1_000_000) : "3",
+  );
   const [message, setMessage] = useState("");
   const [anonymous, setAnonymous] = useState(false);
   const [stage, setStage] = useState<Stage>("idle");
@@ -139,6 +150,7 @@ export default function TipForm({
           anonymous,
           fromAddress,
           eventSlug,
+          payCodeSlug,
         }),
       }).then((r) => r.json());
       if (!prep.transferId) throw new Error(prep.error ?? "prepare failed");
@@ -186,12 +198,15 @@ export default function TipForm({
   if (stage === "done") {
     return (
       <div className="card animate-wink-in p-6 text-center">
-        <div className="text-4xl">😉✨</div>
+        <div className="text-4xl">{isPay ? "💸✅" : "😉✨"}</div>
         <h3 className="mt-3 text-lg font-bold">
-          You winked ${dollars} to @{handle}
+          {isPay
+            ? `You paid $${dollars} to @${handle}`
+            : `You winked $${dollars} to @${handle}`}
         </h3>
         <p className="mt-1 text-sm text-ink-300">
           Settled on Tempo{txHash ? ` · tx ${txHash.slice(0, 10)}…` : ""}
+          {invoiceRef ? ` · ${invoiceRef}` : ""}
         </p>
         <div className="mt-5 flex flex-col gap-2">
           <a href="/claim" className="btn-primary">
@@ -208,7 +223,12 @@ export default function TipForm({
   return (
     <div className="card p-6">
       <h3 className="font-semibold">
-        Wink <span className="text-wink">@{handle}</span>
+        {isPay ? "Pay" : "Wink"} <span className="text-wink">@{handle}</span>
+        {invoiceRef && (
+          <span className="ml-2 rounded-md bg-wink/15 px-2 py-0.5 text-xs font-semibold text-wink">
+            {invoiceRef}
+          </span>
+        )}
       </h3>
 
       {/* wallet source */}
@@ -247,49 +267,68 @@ export default function TipForm({
         </p>
       )}
 
-      <div className="mt-4 grid grid-cols-4 gap-2">
-        {PRESETS.map((p) => (
-          <button
-            key={p}
-            onClick={() => setDollars(String(p))}
-            className={`rounded-xl border py-2.5 text-sm font-semibold transition ${
-              dollars === String(p)
-                ? "border-wink bg-wink/15 text-wink"
-                : "border-ink-700 text-ink-300 hover:border-ink-500"
-            }`}
-          >
-            ${p}
-          </button>
-        ))}
-      </div>
+      {fixedAmountMicro ? (
+        <div className="mt-4 rounded-xl border border-wink/40 bg-wink/10 py-4 text-center">
+          <div className="text-3xl font-bold text-wink">
+            ${(fixedAmountMicro / 1_000_000).toFixed(2)}
+          </div>
+          <div className="mt-1 text-xs text-ink-400">
+            fixed by this pay code — no gas, no fees
+          </div>
+        </div>
+      ) : (
+        <>
+          <div className="mt-4 grid grid-cols-4 gap-2">
+            {PRESETS.map((p) => (
+              <button
+                key={p}
+                onClick={() => setDollars(String(p))}
+                className={`rounded-xl border py-2.5 text-sm font-semibold transition ${
+                  dollars === String(p)
+                    ? "border-wink bg-wink/15 text-wink"
+                    : "border-ink-700 text-ink-300 hover:border-ink-500"
+                }`}
+              >
+                ${p}
+              </button>
+            ))}
+          </div>
 
-      <input
-        className="input mt-3"
-        type="number"
-        min="0.1"
-        step="0.5"
-        value={dollars}
-        onChange={(e) => setDollars(e.target.value)}
-        placeholder="Custom amount (USD)"
-      />
+          <input
+            className="input mt-3"
+            type="number"
+            min="0.1"
+            step="0.5"
+            value={dollars}
+            onChange={(e) => setDollars(e.target.value)}
+            placeholder="Custom amount (USD)"
+          />
+        </>
+      )}
 
       <input
         className="input mt-3"
         maxLength={140}
         value={message}
         onChange={(e) => setMessage(e.target.value)}
-        placeholder={`Say something nice to ${recipientName}… (optional)`}
+        placeholder={
+          isPay
+            ? `Note for ${recipientName}… (optional)`
+            : `Say something nice to ${recipientName}… (optional)`
+        }
       />
 
-      <label className="mt-4 flex cursor-pointer items-center gap-2 text-sm text-ink-300">
-        <input
-          type="checkbox"
-          checked={anonymous}
-          onChange={(e) => setAnonymous(e.target.checked)}
-          className="h-4 w-4 accent-wink"
-        />
-        Wink incognito 🕶️ <span className="text-ink-500">(your name stays hidden)</span>
-      </label>
+      {!isPay && (
+        <label className="mt-4 flex cursor-pointer items-center gap-2 text-sm text-ink-300">
+          <input
+            type="checkbox"
+            checked={anonymous}
+            onChange={(e) => setAnonymous(e.target.checked)}
+            className="h-4 w-4 accent-wink"
+          />
+          Wink incognito 🕶️ <span className="text-ink-500">(your name stays hidden)</span>
+        </label>
+      )}
 
       <button
         className="btn-primary mt-5 w-full text-base"
@@ -300,7 +339,7 @@ export default function TipForm({
         {stage === "signing" && (useOwn ? "Confirm in your wallet…" : "Sending on-chain…")}
         {stage === "confirming" && "Confirming on Tempo…"}
         {!["funding", "signing", "confirming"].includes(stage) &&
-          `😉 Wink $${dollars || "0"}`}
+          (isPay ? `💸 Pay $${dollars || "0"}` : `😉 Wink $${dollars || "0"}`)}
       </button>
 
       {!useOwn && !wallet && (

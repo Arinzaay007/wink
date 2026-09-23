@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { eq } from "drizzle-orm";
 import { getDb } from "@/db";
-import { usernames, users, wallets, transfers, events } from "@/db/schema";
+import { usernames, users, wallets, transfers, events, payCodes } from "@/db/schema";
 import { getSessionUserId } from "@/lib/session";
 import { normalizeHandle } from "@/lib/handles";
 import { PATH_USD, TOKEN_SYMBOL, encodeMemo, winkMemo } from "@/lib/tempo";
@@ -17,6 +17,7 @@ const Body = z.object({
   anonymous: z.boolean().optional(),
   fromAddress: z.string().refine((v) => isAddress(v), "bad-address"),
   eventSlug: z.string().max(60).optional(), // spray-wall attribution
+  payCodeSlug: z.string().max(80).optional(), // merchant pay-code attribution
 });
 
 /**
@@ -33,8 +34,15 @@ export async function POST(req: Request) {
   if (!parsed.success)
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
 
-  const { handle: raw, amountMicro, message, anonymous, fromAddress, eventSlug } =
-    parsed.data;
+  const {
+    handle: raw,
+    amountMicro,
+    message,
+    anonymous,
+    fromAddress,
+    eventSlug,
+    payCodeSlug,
+  } = parsed.data;
   const handle = normalizeHandle(raw);
 
   const name = await db.query.usernames.findFirst({
@@ -58,13 +66,33 @@ export async function POST(req: Request) {
     eventId = event.id;
   }
 
+  // pay-code attribution: the code must belong to the wink's recipient.
+  // Fixed-amount codes enforce their amount; open codes accept anything.
+  let payCodeId: string | null = null;
+  let kind: "wink" | "sale" = "wink";
+  if (payCodeSlug) {
+    const code = await db.query.payCodes.findFirst({
+      where: eq(payCodes.slug, payCodeSlug),
+    });
+    if (!code || code.ownerId !== recipient.id)
+      return NextResponse.json({ error: "pay-code-not-found" }, { status: 404 });
+    if (code.amountMicro !== null && code.amountMicro !== amountMicro)
+      return NextResponse.json(
+        { error: "amount-does-not-match-pay-code" },
+        { status: 400 },
+      );
+    payCodeId = code.id;
+    kind = "sale";
+  }
+
   const fromUserId = await getSessionUserId(); // guests wink too (null = guest)
 
   const [transfer] = await db
     .insert(transfers)
     .values({
-      kind: "wink",
+      kind,
       eventId,
+      payCodeId,
       fromUserId,
       fromAddress,
       toUserId: recipient.id,

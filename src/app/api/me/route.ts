@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { getDb } from "@/db";
-import { users, usernames, wallets, transfers } from "@/db/schema";
+import { users, usernames, wallets, transfers, payCodes } from "@/db/schema";
 import { getSessionUserId } from "@/lib/session";
 import { desc } from "drizzle-orm";
 
@@ -29,6 +29,15 @@ export async function GET() {
     limit: 25,
   });
 
+  // attach invoice refs (pay-code memos) for merchant reconciliation
+  const codeIds = [
+    ...new Set(incoming.map((t) => t.payCodeId).filter(Boolean)),
+  ] as string[];
+  const codes = codeIds.length
+    ? await db.select().from(payCodes).where(inArray(payCodes.id, codeIds))
+    : [];
+  const memoByCode = new Map(codes.map((c) => [c.id, c.memo]));
+
   return NextResponse.json({
     user: {
       id: user.id,
@@ -45,6 +54,9 @@ export async function GET() {
       kind: w.kind,
       label: w.label,
     })),
-    incoming,
+    incoming: incoming.map((t) => ({
+      ...t,
+      invoiceRef: t.payCodeId ? (memoByCode.get(t.payCodeId) ?? null) : null,
+    })),
   });
 }

@@ -29,11 +29,21 @@ interface Me {
     kind: string;
     amountMicro: number;
     message: string | null;
+    invoiceRef: string | null;
     tipperVisibility: "named" | "anonymous";
     status: string;
     createdAt: string;
   }[];
 }
+
+type PayCode = {
+  id: string;
+  slug: string;
+  kind: "tip" | "invoice";
+  amountMicro: number | null;
+  memo: string | null;
+  note: string | null;
+};
 
 export default function DashboardPage() {
   const [me, setMe] = useState<Me | null>(null);
@@ -45,6 +55,12 @@ export default function DashboardPage() {
   const [eventTitle, setEventTitle] = useState("");
   const [eventEmoji, setEventEmoji] = useState("🎉");
   const [creatingEvent, setCreatingEvent] = useState(false);
+  const [myPayCodes, setMyPayCodes] = useState<PayCode[]>([]);
+  const [pcKind, setPcKind] = useState<"tip" | "invoice">("tip");
+  const [pcAmount, setPcAmount] = useState("");
+  const [pcMemo, setPcMemo] = useState("");
+  const [pcNote, setPcNote] = useState("");
+  const [creatingPayCode, setCreatingPayCode] = useState(false);
 
   const load = useCallback(async () => {
     const res = await fetch("/api/me");
@@ -59,15 +75,21 @@ export default function DashboardPage() {
     if (res.ok) setMyEvents((await res.json()).events ?? []);
   }, []);
 
+  const loadPayCodes = useCallback(async () => {
+    const res = await fetch("/api/pay-codes");
+    if (res.ok) setMyPayCodes((await res.json()).payCodes ?? []);
+  }, []);
+
   useEffect(() => {
     load();
     loadEvents();
+    loadPayCodes();
     const w = loadDemoWallet();
     if (w) {
       setWalletAddr(w.address);
       fetchBalance(w.address).then(setBalance).catch(() => {});
     }
-  }, [load, loadEvents]);
+  }, [load, loadEvents, loadPayCodes]);
 
   const createEvent = async () => {
     if (!eventTitle.trim()) return;
@@ -80,6 +102,28 @@ export default function DashboardPage() {
     setEventTitle("");
     setCreatingEvent(false);
     loadEvents();
+  };
+
+  const createPayCode = async () => {
+    if (pcKind === "invoice" && (!pcAmount || parseFloat(pcAmount) <= 0)) return;
+    setCreatingPayCode(true);
+    const res = await fetch("/api/pay-codes", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        kind: pcKind,
+        amountDollars: pcAmount ? parseFloat(pcAmount) : undefined,
+        memo: pcMemo || undefined,
+        note: pcNote || undefined,
+      }),
+    });
+    if (res.ok) {
+      setPcAmount("");
+      setPcMemo("");
+      setPcNote("");
+      loadPayCodes();
+    }
+    setCreatingPayCode(false);
   };
 
   const makeWallet = async () => {
@@ -308,6 +352,94 @@ export default function DashboardPage() {
           )}
         </section>
 
+        {/* merchant pay codes */}
+        <section className="card p-6">
+          <h2 className="font-semibold">🏪 Pay codes</h2>
+          <p className="mt-1 text-xs text-ink-500">
+            Print a QR, put it on the counter, get paid. Invoices carry a
+            reference so every sale reconciles itself.
+          </p>
+
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            <select
+              className="input !w-32"
+              value={pcKind}
+              onChange={(e) => setPcKind(e.target.value as "tip" | "invoice")}
+            >
+              <option value="tip">Tip jar</option>
+              <option value="invoice">Invoice</option>
+            </select>
+            {pcKind === "invoice" && (
+              <input
+                className="input !w-28"
+                type="number"
+                min="0.1"
+                step="0.5"
+                placeholder="$ amount"
+                value={pcAmount}
+                onChange={(e) => setPcAmount(e.target.value)}
+              />
+            )}
+            {pcKind === "invoice" && (
+              <input
+                className="input !w-32"
+                placeholder="INV-001"
+                maxLength={31}
+                value={pcMemo}
+                onChange={(e) => setPcMemo(e.target.value)}
+              />
+            )}
+            <input
+              className="input flex-1"
+              placeholder='What is it for? e.g. "Haircut + beard"'
+              maxLength={140}
+              value={pcNote}
+              onChange={(e) => setPcNote(e.target.value)}
+            />
+            <button className="btn-primary !px-3" disabled={creatingPayCode} onClick={createPayCode}>
+              Create
+            </button>
+          </div>
+
+          {myPayCodes.length > 0 && (
+            <ul className="mt-4 space-y-2">
+              {myPayCodes.map((pc) => {
+                const path = `/pay/${me?.handles[0] ?? ""}?code=${pc.slug}`;
+                const url =
+                  typeof window !== "undefined"
+                    ? `${window.location.origin}${path}`
+                    : path;
+                return (
+                  <li key={pc.slug} className="flex items-center gap-3 rounded-xl border border-ink-700 px-3 py-2.5 text-sm">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={`/api/qr?p=${encodeURIComponent(path)}`} alt="QR" className="h-12 w-12 rounded-lg" />
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate font-medium">
+                        {pc.kind === "invoice" ? "🧾" : "🫙"}{" "}
+                        {pc.note ?? (pc.kind === "invoice" ? "Invoice" : "Tip jar")}
+                        {pc.amountMicro != null && (
+                          <span className="mono ml-2 text-mint">${formatMicro(pc.amountMicro)}</span>
+                        )}
+                        {pc.memo && <span className="mono ml-2 text-xs text-ink-400">{pc.memo}</span>}
+                      </div>
+                      <div className="truncate text-xs text-ink-500">{path}</div>
+                    </div>
+                    <button
+                      className="btn-ghost !px-3 !py-1.5 text-xs"
+                      onClick={() => navigator.clipboard?.writeText(url)}
+                    >
+                      Copy link
+                    </button>
+                    <a href={`/api/qr?p=${encodeURIComponent(path)}`} download={`wink-pay-${pc.slug}.png`} className="btn-ghost !px-3 !py-1.5 text-xs">
+                      QR ↓
+                    </a>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </section>
+
         {/* feed */}
         <section className="card p-6">
           <h2 className="font-semibold">Money in</h2>
@@ -319,9 +451,13 @@ export default function DashboardPage() {
             <ul className="mt-3 max-h-72 space-y-2 overflow-y-auto">
               {confirmed.map((t) => (
                 <li key={t.id} className="flex items-center gap-3 rounded-xl border border-ink-700 px-3 py-2.5 text-sm">
-                  <span>{t.tipperVisibility === "anonymous" ? "🕶️" : "😉"}</span>
+                  <span>
+                    {t.kind === "sale" ? "🧾" : t.tipperVisibility === "anonymous" ? "🕶️" : "😉"}
+                  </span>
                   <span className="flex-1 truncate text-ink-300">
-                    {t.message ?? (t.kind === "wink" ? "wink" : t.kind)}
+                    {t.kind === "sale"
+                      ? `sale${t.invoiceRef ? ` · ${t.invoiceRef}` : ""}${t.message ? ` · “${t.message}”` : ""}`
+                      : t.message ?? "wink"}
                   </span>
                   <span className="mono font-semibold text-mint">
                     +${formatMicro(t.amountMicro)}
