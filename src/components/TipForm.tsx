@@ -243,7 +243,7 @@ export default function TipForm({
             className={`rounded-xl border px-2 py-2.5 font-semibold transition ${
               useOwn
                 ? "border-wink bg-wink/15 text-wink"
-                : "border-ink-700 text-ink-300 hover:border-ink-500"
+                : "border-line text-ink-300 hover:border-ink-500"
             }`}
           >
             {connecting ? "Connecting…" : ownAddr ? "👛 My wallet" : "👛 Connect wallet"}
@@ -254,7 +254,7 @@ export default function TipForm({
           className={`rounded-xl border px-2 py-2.5 font-semibold transition ${
             !useOwn
               ? "border-wink bg-wink/15 text-wink"
-              : "border-ink-700 text-ink-300 hover:border-ink-500"
+              : "border-line text-ink-300 hover:border-ink-500"
           } ${hasOwn ? "" : "col-span-2"}`}
         >
           ⚡ Instant demo wallet
@@ -289,7 +289,7 @@ export default function TipForm({
                 className={`rounded-xl border py-2.5 text-sm font-semibold transition ${
                   dollars === String(p)
                     ? "border-wink bg-wink/15 text-wink"
-                    : "border-ink-700 text-ink-300 hover:border-ink-500"
+                    : "border-line text-ink-300 hover:border-ink-500"
                 }`}
               >
                 ${p}

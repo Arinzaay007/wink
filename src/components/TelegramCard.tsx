@@ -96,7 +96,7 @@ export default function TelegramCard() {
                 </li>
                 <li>Done — every confirmed wink pings you here instantly.</li>
               </ol>
-              <div className="rounded-xl border border-ink-700 bg-ink-900/60 p-3 text-center">
+              <div className="rounded-xl border border-line bg-paper-dim/70 p-3 text-center">
                 <div className="mono text-xl font-bold tracking-wider">{code}</div>
                 <div className="mt-1 text-xs text-ink-500">
                   one-time · expires in {ttlMin} minutes

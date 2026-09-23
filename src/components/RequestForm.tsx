@@ -63,7 +63,7 @@ export default function RequestForm({ handle }: { handle: string }) {
             className={`rounded-xl border py-2.5 text-sm font-semibold transition ${
               dollars === String(p)
                 ? "border-wink bg-wink/15 text-wink"
-                : "border-ink-700 text-ink-300 hover:border-ink-500"
+                : "border-line text-ink-300 hover:border-ink-500"
             }`}
           >
             ${p}

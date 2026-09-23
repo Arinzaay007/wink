@@ -251,7 +251,7 @@ export default function DashboardPage() {
           ) : (
             <ul className="mt-3 space-y-3">
               {m.handles.map((h) => (
-                <li key={h} className="flex items-center gap-3 rounded-xl border border-ink-700 p-3">
+                <li key={h} className="flex items-center gap-3 rounded-xl border border-line p-3">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={`/api/qr?h=${h}`}
@@ -296,7 +296,7 @@ export default function DashboardPage() {
               {(walletAddr ? [walletAddr, ...m.wallets.map((w) => w.address)] : m.wallets.map((w) => w.address))
                 .filter((v, i, a) => a.indexOf(v) === i)
                 .map((addr) => (
-                  <div key={addr} className="rounded-xl border border-ink-700 p-3">
+                  <div key={addr} className="rounded-xl border border-line p-3">
                     <div className="mono break-all text-xs text-ink-300">{addr}</div>
                   </div>
                 ))}
@@ -372,7 +372,7 @@ export default function DashboardPage() {
           {myEvents.length > 0 && (
             <ul className="mt-4 space-y-2">
               {myEvents.map((ev) => (
-                <li key={ev.slug} className="flex items-center gap-3 rounded-xl border border-ink-700 px-3 py-2.5 text-sm">
+                <li key={ev.slug} className="flex items-center gap-3 rounded-xl border border-line px-3 py-2.5 text-sm">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={`/api/qr?p=/wall/${ev.slug}`} alt="QR" className="h-12 w-12 rounded-lg" />
                   <div className="min-w-0 flex-1">
@@ -448,7 +448,7 @@ export default function DashboardPage() {
                     ? `${window.location.origin}${path}`
                     : path;
                 return (
-                  <li key={pc.slug} className="flex items-center gap-3 rounded-xl border border-ink-700 px-3 py-2.5 text-sm">
+                  <li key={pc.slug} className="flex items-center gap-3 rounded-xl border border-line px-3 py-2.5 text-sm">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={`/api/qr?p=${encodeURIComponent(path)}`} alt="QR" className="h-12 w-12 rounded-lg" />
                     <div className="min-w-0 flex-1">
@@ -517,7 +517,7 @@ export default function DashboardPage() {
               </h3>
               <ul className="mt-2 space-y-2">
                 {incomingReqs.map((r) => (
-                  <li key={r.id} className="rounded-xl border border-ink-700 px-3 py-2.5 text-sm">
+                  <li key={r.id} className="rounded-xl border border-line px-3 py-2.5 text-sm">
                     <div className="flex items-center gap-3">
                       <span>📨</span>
                       <div className="min-w-0 flex-1">
@@ -543,7 +543,7 @@ export default function DashboardPage() {
                           </button>
                         </>
                       ) : (
-                        <span className="rounded-md bg-ink-800 px-2 py-1 text-xs text-ink-400">
+                        <span className="rounded-md bg-paper-dim px-2 py-1 text-xs text-ink-400">
                           {r.status}
                         </span>
                       )}
@@ -573,7 +573,7 @@ export default function DashboardPage() {
               </h3>
               <ul className="mt-2 space-y-2">
                 {sentReqs.map((r) => (
-                  <li key={r.id} className="flex items-center gap-3 rounded-xl border border-ink-700 px-3 py-2.5 text-sm">
+                  <li key={r.id} className="flex items-center gap-3 rounded-xl border border-line px-3 py-2.5 text-sm">
                     <span>
                       {r.status === "paid" ? "✅" : r.status === "declined" ? "🚫" : "⏳"}
                     </span>
@@ -584,7 +584,7 @@ export default function DashboardPage() {
                     <span className="mono font-semibold text-ink-300">
                       ${formatMicro(r.amountMicro)}
                     </span>
-                    <span className="rounded-md bg-ink-800 px-2 py-1 text-xs text-ink-400">
+                    <span className="rounded-md bg-paper-dim px-2 py-1 text-xs text-ink-400">
                       {r.status}
                     </span>
                   </li>
@@ -604,7 +604,7 @@ export default function DashboardPage() {
           ) : (
             <ul className="mt-3 max-h-72 space-y-2 overflow-y-auto">
               {confirmed.map((t) => (
-                <li key={t.id} className="flex items-center gap-3 rounded-xl border border-ink-700 px-3 py-2.5 text-sm">
+                <li key={t.id} className="flex items-center gap-3 rounded-xl border border-line px-3 py-2.5 text-sm">
                   <span>
                     {t.kind === "sale"
                       ? "🧾"

@@ -3,19 +3,22 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 body {
-  @apply bg-ink-950 text-ink-100 antialiased;
+  @apply bg-paper text-ink-900 antialiased;
+  font-feature-settings: "ss01" on, "cv05" on;
 }
 
 ::selection {
   @apply bg-wink text-ink-950;
 }
 
+/* ── primitives ─────────────────────────────────────────────────── */
+
 .card {
-  @apply rounded-2xl border border-ink-700 bg-ink-900/80 backdrop-blur;
+  @apply rounded-2xl border border-line bg-paper-raised shadow-card;
 }
 
 .btn {
@@ -24,29 +27,39 @@ body {
     disabled:pointer-events-none;
 }
 
+/* espresso button — the premium default */
 .btn-primary {
+  @apply btn bg-ink-950 text-paper hover:bg-ink-800 active:scale-[0.98];
+}
+
+/* gold button — for the wink moments */
+.btn-gold {
   @apply btn bg-wink text-ink-950 hover:bg-wink-soft active:scale-[0.98];
 }
 
 .btn-ghost {
-  @apply btn border border-ink-700 text-ink-100 hover:border-ink-500 hover:bg-ink-800;
+  @apply btn border border-line-strong text-ink-900 hover:border-ink-500 hover:bg-paper-dim;
 }
 
 .input {
-  @apply w-full rounded-xl border border-ink-700 bg-ink-900 px-3.5 py-2.5
-    text-sm text-ink-100 outline-none transition-colors
-    placeholder:text-ink-500 focus:border-wink/70;
+  @apply w-full rounded-xl border border-line bg-paper-raised px-3.5 py-2.5
+    text-sm text-ink-900 outline-none transition-colors
+    placeholder:text-ink-500/80 focus:border-wink;
 }
 
 .label {
-  @apply mb-1.5 block text-xs font-medium uppercase tracking-wider text-ink-300;
+  @apply mb-1.5 block text-xs font-medium uppercase tracking-wider text-ink-500;
+}
+
+.eyebrow {
+  @apply text-xs font-semibold uppercase tracking-[0.22em] text-wink-ink;
 }
 
 .mono {
   font-variant-numeric: tabular-nums;
 }
 
-/* spray wall rain */
+/* ── spray wall rain (dark room, gold rain — intentional) ───────── */
 @keyframes sprayFall {
   0% {
     transform: translateY(-8vh) rotate(-8deg);

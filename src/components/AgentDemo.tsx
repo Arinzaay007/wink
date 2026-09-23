@@ -132,7 +132,7 @@ export default function AgentDemo({ defaultHandle }: { defaultHandle: string }) 
       </div>
 
       {(log.length > 0 || running) && (
-        <div className="mono mt-4 max-h-96 space-y-1 overflow-y-auto rounded-xl border border-ink-700 bg-ink-950 p-4 text-[11px] leading-relaxed">
+        <div className="mono mt-4 max-h-96 space-y-1 overflow-y-auto rounded-xl border border-line bg-ink-950 p-4 text-[11px] leading-relaxed">
           {log.length === 0 && <div className="text-ink-500">booting agent…</div>}
           {log.map((s, i) => (
             <div key={i} className={`whitespace-pre-wrap break-all ${color(s.kind)}`}>

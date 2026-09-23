@@ -200,7 +200,7 @@ export default function BridgePanel({ handle }: { handle: string }) {
   if (!open) {
     return (
       <button
-        className="mt-4 w-full rounded-xl border border-dashed border-ink-700 px-4 py-3 text-sm text-ink-400 transition hover:border-wink/50 hover:text-ink-200"
+        className="mt-4 w-full rounded-xl border border-dashed border-line px-4 py-3 text-sm text-ink-400 transition hover:border-wink/50 hover:text-ink-200"
         onClick={() => setOpen(true)}
       >
         🌉 Paying from another chain? <span className="text-wink">Bridge in →</span>

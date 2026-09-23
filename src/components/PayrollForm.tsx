@@ -211,7 +211,7 @@ export default function PayrollForm() {
             {rows.map((r, i) => (
               <li
                 key={i}
-                className="flex items-center gap-3 rounded-xl border border-ink-700 px-3 py-2.5 text-sm"
+                className="flex items-center gap-3 rounded-xl border border-line px-3 py-2.5 text-sm"
               >
                 <span className="w-5 text-center">
                   {r.status === "confirmed" && "✅"}
@@ -244,7 +244,7 @@ export default function PayrollForm() {
             ))}
           </ul>
 
-          <div className="mt-4 flex items-center justify-between rounded-xl bg-ink-800/60 px-4 py-3">
+          <div className="mt-4 flex items-center justify-between rounded-xl bg-paper-dim/70 px-4 py-3">
             <span className="text-sm text-ink-300">
               {payable} payment{payable === 1 ? "" : "s"}
             </span>
@@ -264,7 +264,7 @@ export default function PayrollForm() {
                     className={`rounded-xl border px-2 py-2.5 font-semibold transition ${
                       useOwn
                         ? "border-wink bg-wink/15 text-wink"
-                        : "border-ink-700 text-ink-300 hover:border-ink-500"
+                        : "border-line text-ink-300 hover:border-ink-500"
                     }`}
                   >
                     {ownAddr ? "👛 My wallet" : "👛 Connect wallet"}
@@ -275,7 +275,7 @@ export default function PayrollForm() {
                   className={`rounded-xl border px-2 py-2.5 font-semibold transition ${
                     !useOwn
                       ? "border-wink bg-wink/15 text-wink"
-                      : "border-ink-700 text-ink-300 hover:border-ink-500"
+                      : "border-line text-ink-300 hover:border-ink-500"
                   } ${hasOwn ? "" : "col-span-2"}`}
                 >
                   ⚡ Instant demo wallet
