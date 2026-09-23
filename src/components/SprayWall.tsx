@@ -31,8 +31,6 @@ interface Drop {
   size: number; // rem
 }
 
-const MEDALS = ["🥇", "🥈", "🥉"];
-
 function fmtMicro(micro: number): string {
   return (micro / 1_000_000).toLocaleString("en-US", {
     minimumFractionDigits: 2,
@@ -162,29 +160,29 @@ export default function SprayWall({ slug }: { slug: string }) {
           )}
         </div>
 
-        <div className="mt-10 grid gap-6 md:grid-cols-[1fr_360px]">
-          {/* live feed */}
+        <div className="mx-auto mt-10 max-w-2xl">
+          {/* live feed — the heart of the wall */}
           <section>
-            <h2 className="text-sm font-semibold uppercase tracking-widest text-ink-300">
-              Live feed
+            <h2 className="text-center text-sm font-semibold uppercase tracking-widest text-ink-300">
+              Live from the floor
             </h2>
             {data.recent.length === 0 ? (
-              <p className="mt-4 text-sm text-ink-500">
+              <p className="mt-6 text-center text-sm text-ink-500">
                 The wall is waiting for its first wink… be the one who starts it. 😉
               </p>
             ) : (
-              <ul className="mt-3 space-y-2">
-                {data.recent.slice(0, 10).map((w) => (
+              <ul className="mt-4 space-y-2">
+                {data.recent.slice(0, 12).map((w) => (
                   <li
                     key={w.id}
-                    className="card animate-wink-in flex items-center gap-3 px-4 py-2.5 text-sm"
+                    className="card animate-wink-in flex items-center gap-3 px-4 py-3 text-sm"
                   >
-                    <span>{w.anonymous ? "🕶️" : data.event.emoji}</span>
+                    <span className="text-lg">{w.anonymous ? "🕶️" : data.event.emoji}</span>
                     <span className="min-w-0 flex-1 truncate text-ink-300">
                       <strong className="text-ink-100">
-                        {w.anonymous ? "Someone" : w.sprayer}
+                        {w.anonymous ? "Someone special" : w.sprayer}
                       </strong>
-                      {w.message ? <> · “{w.message}”</> : " winked"}
+                      {w.message ? <> · “{w.message}”</> : " sent a wink"}
                     </span>
                     <span className="mono font-semibold text-mint">
                       {w.amountMicro != null ? `$${fmtMicro(w.amountMicro)}` : "🔒"}
@@ -195,40 +193,12 @@ export default function SprayWall({ slug }: { slug: string }) {
             )}
           </section>
 
-          {/* leaderboard */}
-          <section>
-            <h2 className="text-sm font-semibold uppercase tracking-widest text-ink-300">
-              Top sprayers
-            </h2>
-            {data.leaderboard.length === 0 ? (
-              <p className="mt-4 text-sm text-ink-500">No contenders yet.</p>
-            ) : (
-              <ul className="mt-3 space-y-2">
-                {data.leaderboard.slice(0, 5).map((p, i) => (
-                  <li
-                    key={p.name + i}
-                    className="card flex items-center gap-3 px-4 py-2.5 text-sm"
-                  >
-                    <span className="w-7 text-lg">{MEDALS[i] ?? `${i + 1}.`}</span>
-                    <span className="flex-1 truncate font-medium">{p.name}</span>
-                    <span className="mono text-xs text-ink-300">×{p.count}</span>
-                    {p.amountMicro != null && (
-                      <span className="mono font-semibold text-wink">
-                        ${fmtMicro(p.amountMicro)}
-                      </span>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            )}
-
-            <button
-              className="btn-primary mt-6 w-full text-lg"
-              onClick={() => setShowTip((v) => !v)}
-            >
-              🎉 {showTip ? "Close" : "SPRAY NOW"}
-            </button>
-          </section>
+          <button
+            className="btn-primary mt-8 w-full text-lg"
+            onClick={() => setShowTip((v) => !v)}
+          >
+            🎉 {showTip ? "Close" : "SPRAY NOW"}
+          </button>
         </div>
 
         {/* spray panel */}
