@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Wink — GTM One-Pager</title>
+<style>
+  :root{
+    --ink:#101018; --panel:#181822; --line:#2c2c3a; --text:#e8e8f0;
+    --dim:#9a9ab0; --wink:#ffd166; --mint:#7ee8b2; --red:#ff8a8a;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--ink);color:var(--text);font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;line-height:1.45}
+  .page{max-width:860px;margin:0 auto;padding:34px 38px}
+  header{display:flex;justify-content:space-between;align-items:baseline;border-bottom:2px solid var(--wink);padding-bottom:12px}
+  .brand{font-size:26px;font-weight:800}
+  .brand span{color:var(--wink)}
+  .tag{color:var(--dim);font-size:13px}
+  h1{font-size:21px;margin:18px 0 4px}
+  .thesis{font-size:14.5px;color:var(--text)}
+  .thesis b{color:var(--wink)}
+  h2{font-size:12px;text-transform:uppercase;letter-spacing:.14em;color:var(--wink);margin:20px 0 8px}
+  p,li{font-size:13px;color:#cfcfe0}
+  ul{padding-left:18px}
+  li{margin:3px 0}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+  .card h3{font-size:13.5px;margin-bottom:4px}
+  .num{font-family:ui-monospace,Menlo,Consolas,monospace;color:var(--mint);font-size:12px}
+  table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:4px}
+  th,td{text-align:left;padding:5px 8px;border-bottom:1px solid var(--line)}
+  th{color:var(--dim);font-weight:600;text-transform:uppercase;font-size:10.5px;letter-spacing:.08em}
+  td.mono{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;color:var(--mint)}
+  .loop{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap}
+  .step{flex:1;min-width:150px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:12px}
+  .step b{display:block;color:var(--wink);font-size:12.5px;margin-bottom:2px}
+  footer{margin-top:22px;padding-top:10px;border-top:1px solid var(--line);color:var(--dim);font-size:11.5px;display:flex;justify-content:space-between}
+  .pill{display:inline-block;background:rgba(255,209,102,.12);border:1px solid rgba(255,209,102,.4);color:var(--wink);border-radius:999px;padding:1px 9px;font-size:11px;margin-right:6px}
+  @media print{ body{background:#fff;color:#111} .page{padding:10mm}
+    .card,.step{background:#f6f6f8;border-color:#ddd} p,li{color:#222}
+    h2{color:#8a6d1a} .brand span,.thesis b,.step b{color:#8a6d1a}
+    .num,td.mono{color:#0a7a4a} th{color:#666} }
+</style>
+</head>
+<body>
+<div class="page">
+
+<header>
+  <div class="brand">😉 wink<span>.cash</span></div>
+  <div class="tag">The name layer for payments · built on Tempo · Colosseum Crypto World's Fair</div>
+</header>
+
+<h1>Anyone, anywhere, paid with a wink.</h1>
+<p class="thesis">
+  Wink replaces wallet addresses with <b>@handles</b> and settles everything as stablecoins
+  (pathUSD) on Tempo — ~500ms finality, zero gas, 0% platform fee. One primitive
+  (<b>pay a @username</b>) powers four money paths: <span class="pill">🎉 events</span><span class="pill">🏪 shops</span><span class="pill">💸 payroll</span><span class="pill">🤖 agents</span>
+</p>
+
+<h2>Why Nigeria first</h2>
+<div class="grid">
+  <div class="card">
+    <h3>The pain is loudest here</h3>
+    <p>Currency volatility pushes everyday people toward dollar assets; receiving
+    money — tips, sales, wages from abroad — is still friction-heavy. Stablecoins
+    on a fast, fee-light chain answer a daily problem, not a hypothetical one.</p>
+  </div>
+  <div class="card">
+    <h3>The culture is the distribution</h3>
+    <p>Nigeria already runs on social money: owambes spray cash on celebrants,
+    creators get tipped by fans, barbershops live by the counter. Wink doesn't
+    change the culture — <b>it puts the culture on rails</b>.</p>
+  </div>
+</div>
+
+<h2>Three beachheads, one loop</h2>
+<div class="loop">
+  <div class="step"><b>1 · Owambes &amp; events</b>Spray wall QR at weddings/parties. Guests scan, winks rain live.
+  Every guest experiences paying by @handle — <i>the send is the onboarding</i>.</div>
+  <div class="step"><b>2 · Counter commerce</b>Barbershops, salons, food vendors print a pay code.
+  Invoices carry references; the sale reconciles itself. Zero hardware, zero fees.</div>
+  <div class="step"><b>3 · Remote pay</b>Workers request, payers approve with one tap,
+  wages land in a @handle — no bank details, no borders, no waiting days.</div>
+</div>
+<p style="margin-top:8px">
+  <b>Growth loop:</b> guest scans wall → pays in seconds with zero setup → sees their own name missing
+  → claims a handle → hosts their own wall / prints their own code. Events recruit merchants;
+  merchants recruit workers; workers become creators.
+</p>
+
+<h2>Traction model &amp; monetization</h2>
+<p>
+  <b>Acquisition:</b> event hosts (free, viral by design) → QR-printed merchants → creator/worker referrals.
+  <b>Retention:</b> unified money-in dashboard, private support history, invoice reconciliation.
+  <b>Revenue:</b> the rails are free — <b>premium short handles</b> are the business
+  (@chop, @fade, @aso), plus hosted insights for event hosts and merchants later.
+  No platform fee on transfers, ever, in v1.
+</p>
+
+<h2>Proven — on-chain, today (Tempo Moderato)</h2>
+<table>
+  <tr><th>Milestone</th><th>Proof</th></tr>
+  <tr><td>Wedding spray wall — 3 live winks</td><td class="mono">0xbbc4f3ed…</td></tr>
+  <tr><td>Invoice paid at the counter (INV-042)</td><td class="mono">0x6bfaa764…</td></tr>
+  <tr><td>Pay request → approved → settled ($15)</td><td class="mono">0xbac3bff7…</td></tr>
+  <tr><td>Batch payroll — 2 workers, one run</td><td class="mono">0xde999b2a… · 0xcb11e4a6…</td></tr>
+  <tr><td>AI agent pays @adaeze via MPP / HTTP 402</td><td class="mono">0x052cba27…</td></tr>
+  <tr><td>Base→Tempo corridor quoted live (Relay)</td><td class="mono">requestId 0x179013…</td></tr>
+</table>
+
+<h2>The team &amp; the ask</h2>
+<p>
+  Solo founder building a real company at hackathon speed — every shortcut carries a hard gate
+  (OTP auth, embedded wallets, managed Postgres, legal docs before real users).
+  <b>Ask:</b> Tempo track support to bring the live $1 Base→Tempo bridge and the owambe demo
+  to mainnet — where Nigeria's social money already lives, finally on rails it deserves.
+</p>
+
+<footer>
+  <div>wink.cash · “No fees. No gas. Just a wink.”</div>
+  <div>Settles on Tempo · pathUSD · Sep 2026</div>
+</footer>
+
+</div>
+</body>
+</html>
