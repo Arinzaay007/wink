@@ -5,6 +5,7 @@ import { getDb } from "@/db";
 import { usernames, users, payCodes } from "@/db/schema";
 import { normalizeHandle } from "@/lib/handles";
 import TipForm from "@/components/TipForm";
+import BridgePanel from "@/components/BridgePanel";
 
 export const dynamic = "force-dynamic";
 
@@ -121,6 +122,7 @@ export default async function PayPage({
           fixedAmountMicro={fixedMicro}
           invoiceRef={invoiceRef}
         />
+        <BridgePanel handle={handle} />
       </div>
 
       <p className="mt-6 text-center text-xs text-ink-500">

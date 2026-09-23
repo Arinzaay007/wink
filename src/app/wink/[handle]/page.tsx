@@ -6,6 +6,7 @@ import { usernames, users, transfers } from "@/db/schema";
 import { normalizeHandle } from "@/lib/handles";
 import { formatMicro } from "@/lib/tempo";
 import TipForm from "@/components/TipForm";
+import BridgePanel from "@/components/BridgePanel";
 
 export const dynamic = "force-dynamic";
 
@@ -118,6 +119,7 @@ export default async function WinkPage({
       {/* the wink form */}
       <div>
         <TipForm handle={handle} recipientName={user.displayName ?? handle} />
+        <BridgePanel handle={handle} />
         <p className="mt-3 text-center text-xs text-ink-500">
           Settles on Tempo in ~500ms · zero gas for you
         </p>
