@@ -4,14 +4,17 @@ import { normalizeHandle } from "@/lib/handles";
 
 export const runtime = "nodejs";
 
-/** Printable wink code: QR of the public pay page URL. */
+/** Printable wink code: QR of the public pay page (or any ?p= path). */
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
+  const pathParam = searchParams.get("p");
   const handle = normalizeHandle(searchParams.get("h") ?? "");
-  if (!handle) return new NextResponse("missing handle", { status: 400 });
+  if (!pathParam && !handle) return new NextResponse("missing target", { status: 400 });
 
   const base = process.env.NEXT_PUBLIC_BASE_URL ?? "https://wink.cash";
-  const url = `${base}/@${handle}`;
+  const url = pathParam
+    ? `${base}${pathParam.startsWith("/") ? pathParam : `/${pathParam}`}`
+    : `${base}/@${handle}`;
 
   const png = await QRCode.toBuffer(url, {
     width: 640,

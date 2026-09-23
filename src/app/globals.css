@@ -45,3 +45,28 @@ body {
 .mono {
   font-variant-numeric: tabular-nums;
 }
+
+/* spray wall rain */
+@keyframes sprayFall {
+  0% {
+    transform: translateY(-8vh) rotate(-8deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(108vh) rotate(10deg);
+    opacity: 0;
+  }
+}
+
+.spray-drop {
+  animation-name: sprayFall;
+  animation-timing-function: cubic-bezier(0.3, 0, 0.7, 1);
+  animation-fill-mode: forwards;
+  white-space: nowrap;
+}

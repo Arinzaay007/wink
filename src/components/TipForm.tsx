@@ -37,9 +37,11 @@ type Stage =
 export default function TipForm({
   handle,
   recipientName,
+  eventSlug,
 }: {
   handle: string;
   recipientName: string;
+  eventSlug?: string;
 }) {
   const [hasOwn, setHasOwn] = useState(false);
   const [useOwn, setUseOwn] = useState(false);
@@ -136,6 +138,7 @@ export default function TipForm({
           message: message || undefined,
           anonymous,
           fromAddress,
+          eventSlug,
         }),
       }).then((r) => r.json());
       if (!prep.transferId) throw new Error(prep.error ?? "prepare failed");

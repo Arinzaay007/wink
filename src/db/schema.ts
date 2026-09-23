@@ -115,6 +115,26 @@ export const wallets = pgTable(
   })
 );
 
+// ── events wedge: spray walls 🎉 ─────────────────────────────────────
+export const events = pgTable(
+  "events",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    ownerId: text("owner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    slug: text("slug").notNull(), // /wall/<slug>
+    title: text("title").notNull(),
+    emoji: text("emoji").notNull().default("🎉"),
+    live: boolean("live").notNull().default(true),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => ({
+    slugUq: uniqueIndex("events_slug_uq").on(t.slug),
+    ownerIdx: index("events_owner_idx").on(t.ownerId),
+  })
+);
+
 // ── merchant wedge: QR codes & pay links ─────────────────────────────
 export const payCodes = pgTable(
   "pay_codes",
@@ -168,6 +188,7 @@ export const transfers = pgTable(
   {
     id: text("id").primaryKey().$defaultFn(id),
     payCodeId: text("pay_code_id").references(() => payCodes.id),
+    eventId: text("event_id").references(() => events.id), // spray wall attribution
     kind: text("kind").notNull().default("wink"), // wink | sale | wage
     fromUserId: text("from_user_id").references(() => users.id), // null = guest
     fromAddress: text("from_address").notNull(),
@@ -175,6 +196,8 @@ export const transfers = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     toAddress: text("to_address").notNull(),
+    // multichain-ready: origin chain of the incoming asset
+    chain: text("chain").notNull().default("tempo"),
     amountMicro: bigint("amount_micro", { mode: "number" }).notNull(),
     currency: text("currency").notNull().default("pathUSD"),
     memo: text("memo"), // wink:<transferId> when supported by the tx type
@@ -191,6 +214,7 @@ export const transfers = pgTable(
   (t) => ({
     txHashUq: uniqueIndex("transfers_tx_hash_uq").on(t.txHash),
     toIdx: index("transfers_to_idx").on(t.toUserId, t.createdAt),
+    eventIdx: index("transfers_event_idx").on(t.eventId, t.createdAt),
     fromIdx: index("transfers_from_idx").on(t.fromAddress),
     statusIdx: index("transfers_status_idx").on(t.status),
   })

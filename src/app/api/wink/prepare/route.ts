@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { eq } from "drizzle-orm";
 import { getDb } from "@/db";
-import { usernames, users, wallets, transfers } from "@/db/schema";
+import { usernames, users, wallets, transfers, events } from "@/db/schema";
 import { getSessionUserId } from "@/lib/session";
 import { normalizeHandle } from "@/lib/handles";
 import { PATH_USD, TOKEN_SYMBOL, encodeMemo, winkMemo } from "@/lib/tempo";
@@ -13,9 +13,10 @@ export const runtime = "nodejs";
 const Body = z.object({
   handle: z.string().min(1).max(30),
   amountMicro: z.number().int().min(100_000).max(1_000_000_000_000), // $0.10 – $1M
-  message: z.string().max(140).optional(),
+  message: z.string().max(140).nullish(),
   anonymous: z.boolean().optional(),
   fromAddress: z.string().refine((v) => isAddress(v), "bad-address"),
+  eventSlug: z.string().max(60).optional(), // spray-wall attribution
 });
 
 /**
@@ -32,7 +33,8 @@ export async function POST(req: Request) {
   if (!parsed.success)
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
 
-  const { handle: raw, amountMicro, message, anonymous, fromAddress } = parsed.data;
+  const { handle: raw, amountMicro, message, anonymous, fromAddress, eventSlug } =
+    parsed.data;
   const handle = normalizeHandle(raw);
 
   const name = await db.query.usernames.findFirst({
@@ -47,12 +49,22 @@ export async function POST(req: Request) {
   if (!wallet)
     return NextResponse.json({ error: "recipient-has-no-wallet" }, { status: 409 });
 
+  // spray-wall attribution: the event must belong to the wink's recipient
+  let eventId: string | null = null;
+  if (eventSlug) {
+    const event = await db.query.events.findFirst({ where: eq(events.slug, eventSlug) });
+    if (!event || event.ownerId !== recipient.id)
+      return NextResponse.json({ error: "event-not-found" }, { status: 404 });
+    eventId = event.id;
+  }
+
   const fromUserId = await getSessionUserId(); // guests wink too (null = guest)
 
   const [transfer] = await db
     .insert(transfers)
     .values({
       kind: "wink",
+      eventId,
       fromUserId,
       fromAddress,
       toUserId: recipient.id,

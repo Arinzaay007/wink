@@ -8,6 +8,13 @@ import Link from "next/link";
 import { loadDemoWallet, createDemoWallet, fetchBalance } from "@/lib/demoWallet";
 import { formatMicro } from "@/lib/tempo";
 
+interface MyEvent {
+  slug: string;
+  title: string;
+  emoji: string;
+  live: boolean;
+}
+
 interface Me {
   user: {
     id: string;
@@ -34,6 +41,10 @@ export default function DashboardPage() {
   const [walletAddr, setWalletAddr] = useState<string | null>(null);
   const [balance, setBalance] = useState<number | null>(null);
   const [funding, setFunding] = useState(false);
+  const [myEvents, setMyEvents] = useState<MyEvent[]>([]);
+  const [eventTitle, setEventTitle] = useState("");
+  const [eventEmoji, setEventEmoji] = useState("🎉");
+  const [creatingEvent, setCreatingEvent] = useState(false);
 
   const load = useCallback(async () => {
     const res = await fetch("/api/me");
@@ -43,14 +54,33 @@ export default function DashboardPage() {
     setState("ok");
   }, []);
 
+  const loadEvents = useCallback(async () => {
+    const res = await fetch("/api/events");
+    if (res.ok) setMyEvents((await res.json()).events ?? []);
+  }, []);
+
   useEffect(() => {
     load();
+    loadEvents();
     const w = loadDemoWallet();
     if (w) {
       setWalletAddr(w.address);
       fetchBalance(w.address).then(setBalance).catch(() => {});
     }
-  }, [load]);
+  }, [load, loadEvents]);
+
+  const createEvent = async () => {
+    if (!eventTitle.trim()) return;
+    setCreatingEvent(true);
+    await fetch("/api/events", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ title: eventTitle.trim(), emoji: eventEmoji }),
+    });
+    setEventTitle("");
+    setCreatingEvent(false);
+    loadEvents();
+  };
 
   const makeWallet = async () => {
     const w = createDemoWallet();
@@ -228,6 +258,54 @@ export default function DashboardPage() {
               onChange={(e) => setPrivacy({ feedPublic: e.target.checked })}
             />
           </label>
+        </section>
+
+        {/* spray walls */}
+        <section className="card p-6">
+          <h2 className="font-semibold">🎉 Spray walls</h2>
+          <p className="mt-1 text-xs text-ink-500">
+            One QR for the whole party — winks rain on a live big screen.
+          </p>
+          <div className="mt-4 flex gap-2">
+            <select
+              className="input !w-16 text-center"
+              value={eventEmoji}
+              onChange={(e) => setEventEmoji(e.target.value)}
+            >
+              {["🎉", "💍", "🎂", "🎤", "⚽", "🙏", "🏆"].map((e) => (
+                <option key={e}>{e}</option>
+              ))}
+            </select>
+            <input
+              className="input flex-1"
+              placeholder='e.g. "Adaeze & Chidi&apos;s Wedding"'
+              value={eventTitle}
+              maxLength={60}
+              onChange={(e) => setEventTitle(e.target.value)}
+            />
+            <button className="btn-primary !px-3" disabled={creatingEvent} onClick={createEvent}>
+              Create
+            </button>
+          </div>
+          {myEvents.length > 0 && (
+            <ul className="mt-4 space-y-2">
+              {myEvents.map((ev) => (
+                <li key={ev.slug} className="flex items-center gap-3 rounded-xl border border-ink-700 px-3 py-2.5 text-sm">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={`/api/qr?p=/wall/${ev.slug}`} alt="QR" className="h-12 w-12 rounded-lg" />
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate font-medium">
+                      {ev.emoji} {ev.title}
+                    </div>
+                    <div className="text-xs text-ink-500">/wall/{ev.slug}</div>
+                  </div>
+                  <Link href={`/wall/${ev.slug}`} className="btn-ghost !px-3 !py-1.5 text-xs">
+                    Open wall →
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
         </section>
 
         {/* feed */}
