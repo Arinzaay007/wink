@@ -7,6 +7,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { loadDemoWallet, createDemoWallet, fetchBalance } from "@/lib/demoWallet";
 import { formatMicro } from "@/lib/tempo";
+import TipForm from "@/components/TipForm";
 
 interface MyEvent {
   slug: string;
@@ -45,6 +46,16 @@ type PayCode = {
   note: string | null;
 };
 
+type PayReq = {
+  id: string;
+  amountMicro: number;
+  note: string | null;
+  status: "open" | "paid" | "declined" | "expired";
+  createdAt: string;
+  counterpartyHandle: string | null;
+  counterpartyName: string | null;
+};
+
 export default function DashboardPage() {
   const [me, setMe] = useState<Me | null>(null);
   const [state, setState] = useState<"loading" | "ok" | "unauthed" | "nodb">("loading");
@@ -61,6 +72,10 @@ export default function DashboardPage() {
   const [pcMemo, setPcMemo] = useState("");
   const [pcNote, setPcNote] = useState("");
   const [creatingPayCode, setCreatingPayCode] = useState(false);
+  const [incomingReqs, setIncomingReqs] = useState<PayReq[]>([]);
+  const [sentReqs, setSentReqs] = useState<PayReq[]>([]);
+  const [payingReqId, setPayingReqId] = useState<string | null>(null);
+  const [reqTarget, setReqTarget] = useState("");
 
   const load = useCallback(async () => {
     const res = await fetch("/api/me");
@@ -80,16 +95,35 @@ export default function DashboardPage() {
     if (res.ok) setMyPayCodes((await res.json()).payCodes ?? []);
   }, []);
 
+  const loadRequests = useCallback(async () => {
+    const res = await fetch("/api/pay-requests");
+    if (res.ok) {
+      const j = await res.json();
+      setIncomingReqs(j.incoming ?? []);
+      setSentReqs(j.sent ?? []);
+    }
+  }, []);
+
+  const declineRequest = async (id: string) => {
+    await fetch(`/api/pay-requests/${id}`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ action: "decline" }),
+    });
+    loadRequests();
+  };
+
   useEffect(() => {
     load();
     loadEvents();
     loadPayCodes();
+    loadRequests();
     const w = loadDemoWallet();
     if (w) {
       setWalletAddr(w.address);
       fetchBalance(w.address).then(setBalance).catch(() => {});
     }
-  }, [load, loadEvents, loadPayCodes]);
+  }, [load, loadEvents, loadPayCodes, loadRequests]);
 
   const createEvent = async () => {
     if (!eventTitle.trim()) return;
@@ -440,6 +474,117 @@ export default function DashboardPage() {
           )}
         </section>
 
+        {/* pay requests (payouts wedge) */}
+        <section className="card p-6">
+          <h2 className="font-semibold">💸 Pay requests</h2>
+          <p className="mt-1 text-xs text-ink-500">
+            Workers ask, you approve — one tap pays them on-chain. Or send
+            your own request to anyone with a handle.
+          </p>
+
+          {/* send a request */}
+          <div className="mt-4 flex gap-2">
+            <input
+              className="input flex-1"
+              placeholder="Request from @handle…"
+              maxLength={30}
+              value={reqTarget}
+              onChange={(e) => setReqTarget(e.target.value.replace(/^@/, ""))}
+            />
+            <Link
+              href={reqTarget.trim() ? `/request/${reqTarget.trim()}` : "#"}
+              aria-disabled={!reqTarget.trim()}
+              className={`btn-primary !px-3 ${reqTarget.trim() ? "" : "pointer-events-none opacity-40"}`}
+            >
+              Request →
+            </Link>
+          </div>
+
+          {/* incoming requests */}
+          {incomingReqs.length > 0 && (
+            <div className="mt-4">
+              <h3 className="text-xs font-semibold uppercase tracking-widest text-ink-400">
+                People asking you
+              </h3>
+              <ul className="mt-2 space-y-2">
+                {incomingReqs.map((r) => (
+                  <li key={r.id} className="rounded-xl border border-ink-700 px-3 py-2.5 text-sm">
+                    <div className="flex items-center gap-3">
+                      <span>📨</span>
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate font-medium">
+                          @{r.counterpartyHandle ?? "someone"}
+                          <span className="mono ml-2 text-mint">${formatMicro(r.amountMicro)}</span>
+                        </div>
+                        {r.note && <div className="truncate text-xs text-ink-500">{r.note}</div>}
+                      </div>
+                      {r.status === "open" ? (
+                        <>
+                          <button
+                            className="btn-primary !px-3 !py-1.5 text-xs"
+                            onClick={() => setPayingReqId(payingReqId === r.id ? null : r.id)}
+                          >
+                            {payingReqId === r.id ? "Close" : "Pay now"}
+                          </button>
+                          <button
+                            className="btn-ghost !px-3 !py-1.5 text-xs"
+                            onClick={() => declineRequest(r.id)}
+                          >
+                            Decline
+                          </button>
+                        </>
+                      ) : (
+                        <span className="rounded-md bg-ink-800 px-2 py-1 text-xs text-ink-400">
+                          {r.status}
+                        </span>
+                      )}
+                    </div>
+                    {payingReqId === r.id && r.counterpartyHandle && (
+                      <div className="mt-3">
+                        <TipForm
+                          handle={r.counterpartyHandle}
+                          recipientName={r.counterpartyName ?? r.counterpartyHandle}
+                          mode="pay"
+                          payRequestId={r.id}
+                          fixedAmountMicro={r.amountMicro}
+                        />
+                      </div>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* requests I sent */}
+          {sentReqs.length > 0 && (
+            <div className="mt-4">
+              <h3 className="text-xs font-semibold uppercase tracking-widest text-ink-400">
+                Your requests
+              </h3>
+              <ul className="mt-2 space-y-2">
+                {sentReqs.map((r) => (
+                  <li key={r.id} className="flex items-center gap-3 rounded-xl border border-ink-700 px-3 py-2.5 text-sm">
+                    <span>
+                      {r.status === "paid" ? "✅" : r.status === "declined" ? "🚫" : "⏳"}
+                    </span>
+                    <span className="flex-1 truncate text-ink-300">
+                      to @{r.counterpartyHandle ?? "?"}
+                      {r.note ? <> · {r.note}</> : null}
+                    </span>
+                    <span className="mono font-semibold text-ink-300">
+                      ${formatMicro(r.amountMicro)}
+                    </span>
+                    <span className="rounded-md bg-ink-800 px-2 py-1 text-xs text-ink-400">
+                      {r.status}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </section>
+
         {/* feed */}
         <section className="card p-6">
           <h2 className="font-semibold">Money in</h2>
@@ -452,12 +597,20 @@ export default function DashboardPage() {
               {confirmed.map((t) => (
                 <li key={t.id} className="flex items-center gap-3 rounded-xl border border-ink-700 px-3 py-2.5 text-sm">
                   <span>
-                    {t.kind === "sale" ? "🧾" : t.tipperVisibility === "anonymous" ? "🕶️" : "😉"}
+                    {t.kind === "sale"
+                      ? "🧾"
+                      : t.kind === "wage"
+                        ? "💸"
+                        : t.tipperVisibility === "anonymous"
+                          ? "🕶️"
+                          : "😉"}
                   </span>
                   <span className="flex-1 truncate text-ink-300">
                     {t.kind === "sale"
                       ? `sale${t.invoiceRef ? ` · ${t.invoiceRef}` : ""}${t.message ? ` · “${t.message}”` : ""}`
-                      : t.message ?? "wink"}
+                      : t.kind === "wage"
+                        ? `payout${t.message ? ` · “${t.message}”` : ""}`
+                        : t.message ?? "wink"}
                   </span>
                   <span className="mono font-semibold text-mint">
                     +${formatMicro(t.amountMicro)}

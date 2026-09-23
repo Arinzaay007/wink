@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { eq } from "drizzle-orm";
 import { getDb } from "@/db";
-import { transfers, ledgerEntries } from "@/db/schema";
+import { transfers, ledgerEntries, payRequests } from "@/db/schema";
 import { verifyTransferOnChain } from "@/lib/tempo";
 import type { Address, Hash } from "viem";
 
@@ -67,6 +67,18 @@ export async function POST(req: Request) {
     // platform fee split = 0 for now; the row shape is already in place
     // so a fee can be switched on without schema changes.
   ]);
+
+  // settling a pay request → close it, link the transfer
+  if (transfer.payRequestId) {
+    await db
+      .update(payRequests)
+      .set({
+        status: "paid",
+        transferId: transfer.id,
+        resolvedAt: new Date(),
+      })
+      .where(eq(payRequests.id, transfer.payRequestId));
+  }
 
   return NextResponse.json({
     status: "confirmed",

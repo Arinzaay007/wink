@@ -188,6 +188,7 @@ export const transfers = pgTable(
   {
     id: text("id").primaryKey().$defaultFn(id),
     payCodeId: text("pay_code_id").references(() => payCodes.id),
+    payRequestId: text("pay_request_id").references(() => payRequests.id),
     eventId: text("event_id").references(() => events.id), // spray wall attribution
     kind: text("kind").notNull().default("wink"), // wink | sale | wage
     fromUserId: text("from_user_id").references(() => users.id), // null = guest
@@ -215,6 +216,7 @@ export const transfers = pgTable(
     txHashUq: uniqueIndex("transfers_tx_hash_uq").on(t.txHash),
     toIdx: index("transfers_to_idx").on(t.toUserId, t.createdAt),
     eventIdx: index("transfers_event_idx").on(t.eventId, t.createdAt),
+    payReqIdx: index("transfers_pay_request_idx").on(t.payRequestId),
     fromIdx: index("transfers_from_idx").on(t.fromAddress),
     statusIdx: index("transfers_status_idx").on(t.status),
   })

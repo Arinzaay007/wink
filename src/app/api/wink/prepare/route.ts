@@ -2,7 +2,15 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { eq } from "drizzle-orm";
 import { getDb } from "@/db";
-import { usernames, users, wallets, transfers, events, payCodes } from "@/db/schema";
+import {
+  usernames,
+  users,
+  wallets,
+  transfers,
+  events,
+  payCodes,
+  payRequests,
+} from "@/db/schema";
 import { getSessionUserId } from "@/lib/session";
 import { normalizeHandle } from "@/lib/handles";
 import { PATH_USD, TOKEN_SYMBOL, encodeMemo, winkMemo } from "@/lib/tempo";
@@ -18,6 +26,7 @@ const Body = z.object({
   fromAddress: z.string().refine((v) => isAddress(v), "bad-address"),
   eventSlug: z.string().max(60).optional(), // spray-wall attribution
   payCodeSlug: z.string().max(80).optional(), // merchant pay-code attribution
+  payRequestId: z.string().max(40).optional(), // payout: settling a pay request
 });
 
 /**
@@ -42,6 +51,7 @@ export async function POST(req: Request) {
     fromAddress,
     eventSlug,
     payCodeSlug,
+    payRequestId,
   } = parsed.data;
   const handle = normalizeHandle(raw);
 
@@ -69,7 +79,7 @@ export async function POST(req: Request) {
   // pay-code attribution: the code must belong to the wink's recipient.
   // Fixed-amount codes enforce their amount; open codes accept anything.
   let payCodeId: string | null = null;
-  let kind: "wink" | "sale" = "wink";
+  let kind: "wink" | "sale" | "wage" = "wink";
   if (payCodeSlug) {
     const code = await db.query.payCodes.findFirst({
       where: eq(payCodes.slug, payCodeSlug),
@@ -87,12 +97,31 @@ export async function POST(req: Request) {
 
   const fromUserId = await getSessionUserId(); // guests wink too (null = guest)
 
+  // pay-request settlement: funds go to the REQUESTER (this wink's
+  // recipient); the signed-in user must be the PAYER named on the
+  // request, and the amount must match exactly.
+  if (payRequestId) {
+    const request = await db.query.payRequests.findFirst({
+      where: eq(payRequests.id, payRequestId),
+    });
+    if (!request || request.status !== "open")
+      return NextResponse.json({ error: "pay-request-not-found" }, { status: 404 });
+    if (request.fromUserId !== recipient.id)
+      return NextResponse.json({ error: "pay-request-recipient-mismatch" }, { status: 400 });
+    if (!fromUserId || request.toUserId !== fromUserId)
+      return NextResponse.json({ error: "only-the-payer-can-settle" }, { status: 403 });
+    if (request.amountMicro !== amountMicro)
+      return NextResponse.json({ error: "amount-does-not-match-pay-request" }, { status: 400 });
+    kind = "wage";
+  }
+
   const [transfer] = await db
     .insert(transfers)
     .values({
       kind,
       eventId,
       payCodeId,
+      payRequestId: payRequestId ?? null,
       fromUserId,
       fromAddress,
       toUserId: recipient.id,

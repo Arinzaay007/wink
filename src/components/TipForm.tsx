@@ -40,6 +40,7 @@ export default function TipForm({
   eventSlug,
   mode = "wink",
   payCodeSlug,
+  payRequestId,
   fixedAmountMicro,
   invoiceRef,
 }: {
@@ -48,6 +49,7 @@ export default function TipForm({
   eventSlug?: string;
   mode?: "wink" | "pay";
   payCodeSlug?: string;
+  payRequestId?: string;
   fixedAmountMicro?: number;
   invoiceRef?: string;
 }) {
@@ -151,6 +153,7 @@ export default function TipForm({
           fromAddress,
           eventSlug,
           payCodeSlug,
+          payRequestId,
         }),
       }).then((r) => r.json());
       if (!prep.transferId) throw new Error(prep.error ?? "prepare failed");
