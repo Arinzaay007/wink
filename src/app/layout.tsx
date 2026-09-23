@@ -97,6 +97,14 @@ export default function RootLayout({
           — the name layer for payments · built on{" "}
           <span className="font-medium text-ink-300">Tempo</span> · settled in
           pathUSD · #Colosseum Crypto World&apos;s Fair
+          <div className="mt-2 space-x-3">
+            <Link href="/legal/terms" className="hover:text-gold">
+              Terms
+            </Link>
+            <Link href="/legal/privacy" className="hover:text-gold">
+              Privacy
+            </Link>
+          </div>
         </footer>
       </body>
     </html>

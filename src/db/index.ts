@@ -62,7 +62,11 @@ export function getDb(): WinkDb | null {
         password: cfg.password,
         // pg maps `ssl: "require"` to libpq sslmode=require in the
         // conninfo (see pg/lib/connection-parameters.getLibpqConnectionString).
-        ssl: cfg.sslmode === "require" ? cfg.sslmode : undefined,
+        // @types/pg only allows boolean|ConnectionOptions; the string form
+        // is native-client-only and correct here, hence the cast.
+        ssl: (cfg.sslmode === "require"
+          ? cfg.sslmode
+          : undefined) as unknown as boolean | undefined,
         max: 4,
         idleTimeoutMillis: 20_000, // Neon autosuspends idle computes; drop idle sockets
       });

@@ -45,7 +45,28 @@ psql "$DATABASE_URL" -v ON_ERROR_STOP=1 \
 The seeded ledger rows point at REAL Moderato tx hashes, so the landing
 page's proof strip stays verifiable.
 
-## 2. Deploy (~10 minutes on a VPS)
+## 2. Deploy (~5 minutes with Docker, ~10 bare metal)
+
+### Option A — Docker (recommended; works on any host)
+
+The repo ships a production `Dockerfile` with libpq baked in, plus
+`docker-compose.yml`:
+
+```bash
+git clone https://github.com/Arinzaay007/wink.git && cd wink
+cp .env.example .env      # fill DATABASE_URL (Neon), SESSION_SECRET, …
+docker compose up -d --build
+# app on :3000 — put Caddy/nginx in front for TLS + wink.cash
+```
+
+### Option B — bare metal (Debian/Ubuntu VPS)
+
+```bash
+# one-shot bootstrap script (installs Node 20, libpq, pm2; builds; runs)
+curl -fsSL https://raw.githubusercontent.com/Arinzaay007/wink/design/paper-gold/deploy/vps-bootstrap.sh | bash
+```
+
+…or by hand:
 
 ```bash
 sudo apt install -y nodejs npm libpq-dev build-essential postgresql-client
