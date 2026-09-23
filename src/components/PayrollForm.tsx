@@ -21,41 +21,15 @@ import {
   injectedWalletClient,
 } from "@/lib/connectedWallet";
 import { PATH_USD, TIP20_ABI } from "@/lib/tempo";
+import { parsePayrollLines, type PayrollRow } from "@/lib/payroll";
 import type { Address } from "viem";
-
-type RowStatus = "draft" | "checking" | "ready" | "unknown-handle" | "bad-line" | "paying" | "confirmed" | "failed";
-
-interface Row {
-  handle: string;
-  dollars: number;
-  memo: string;
-  status: RowStatus;
-  error?: string;
-}
 
 const EXAMPLE = `@arinzaay 250 Landing page design
 @adaeze 120 Community management — Sept`;
 
-function parseLines(text: string): Row[] {
-  return text
-    .split("\n")
-    .map((l) => l.trim())
-    .filter((l) => l && !l.startsWith("#"))
-    .map((line) => {
-      const m = line.match(/^@?([a-z0-9_]{1,30})\s+(\d+(?:\.\d{1,2})?)\s*(.*)$/i);
-      if (!m) return { handle: "", dollars: 0, memo: line, status: "bad-line" as RowStatus };
-      return {
-        handle: m[1].toLowerCase(),
-        dollars: parseFloat(m[2]),
-        memo: m[3].trim(),
-        status: "draft" as RowStatus,
-      };
-    });
-}
-
 export default function PayrollForm() {
   const [text, setText] = useState(EXAMPLE);
-  const [rows, setRows] = useState<Row[]>([]);
+  const [rows, setRows] = useState<PayrollRow[]>([]);
   const [phase, setPhase] = useState<"edit" | "review" | "running" | "done">("edit");
 
   const [hasOwn, setHasOwn] = useState(false);
@@ -74,12 +48,12 @@ export default function PayrollForm() {
     }
   }, []);
 
-  const setRow = (i: number, patch: Partial<Row>) =>
+  const setRow = (i: number, patch: Partial<PayrollRow>) =>
     setRows((rs) => rs.map((r, j) => (j === i ? { ...r, ...patch } : r)));
 
   const validate = async () => {
     setError(null);
-    const parsed = parseLines(text);
+    const parsed = parsePayrollLines(text);
     setRows(parsed);
     if (parsed.length === 0) {
       setError("Add at least one line: @handle amount memo");
