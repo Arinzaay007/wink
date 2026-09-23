@@ -8,6 +8,7 @@ import Link from "next/link";
 import { loadDemoWallet, createDemoWallet, fetchBalance } from "@/lib/demoWallet";
 import { formatMicro } from "@/lib/tempo";
 import TipForm from "@/components/TipForm";
+import TelegramCard from "@/components/TelegramCard";
 
 interface MyEvent {
   slug: string;
@@ -337,6 +338,9 @@ export default function DashboardPage() {
             />
           </label>
         </section>
+
+        {/* telegram notifications */}
+        <TelegramCard />
 
         {/* spray walls */}
         <section className="card p-6">

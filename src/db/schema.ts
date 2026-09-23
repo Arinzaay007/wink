@@ -257,7 +257,46 @@ export const webhookEvents = pgTable(
   })
 );
 
+// ── Telegram notifications ──────────────────────────────────────────
+/** A @handle owner who linked their Telegram chat for push notifications. */
+export const telegramLinks = pgTable(
+  "telegram_links",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    chatId: text("chat_id").notNull(),
+    // cursor: only notify for transfers confirmed after this timestamp
+    lastNotifiedAt: timestamp("last_notified_at").notNull().defaultNow(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => ({
+    userUq: uniqueIndex("telegram_links_user_uq").on(t.userId),
+    chatUq: uniqueIndex("telegram_links_chat_uq").on(t.chatId),
+  })
+);
+
+/** One-time codes minted in the app, redeemed via /link in the bot. */
+export const telegramLinkCodes = pgTable(
+  "telegram_link_codes",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    code: text("code").notNull(),
+    expiresAt: timestamp("expires_at").notNull(),
+    usedAt: timestamp("used_at"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => ({
+    codeUq: uniqueIndex("telegram_link_codes_code_uq").on(t.code),
+  })
+);
+
 export type User = typeof users.$inferSelect;
 export type Username = typeof usernames.$inferSelect;
 export type Wallet = typeof wallets.$inferSelect;
 export type Transfer = typeof transfers.$inferSelect;
+export type TelegramLink = typeof telegramLinks.$inferSelect;

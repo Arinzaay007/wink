@@ -112,7 +112,13 @@ the origin chain for cross-chain arrivals.
 npm install
 cp .env.example .env        # DATABASE_URL, SESSION_SECRET, TEMPO_NETWORK=testnet
 npm run db:push             # drizzle schema → Postgres
-npm run dev
+npm run dev                 # app on :3000
+
+npm test                    # 53 automated tests (handles, memos, MPP, relay, payroll, Telegram)
+npm run rebuild             # restore the whole demo world after a wiped sandbox
+
+# optional Telegram notifier — set TELEGRAM_BOT_TOKEN (from @BotFather) in .env
+npm run bot                 # "you've been winked 😉" DMs on every confirmed transfer
 ```
 
 Testnet config (Moderato): RPC `https://rpc.moderato.tempo.xyz`, chain 42431,
