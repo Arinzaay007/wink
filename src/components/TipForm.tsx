@@ -140,9 +140,14 @@ export default function TipForm({
         <p className="mt-1 text-sm text-ink-300">
           Settled on Tempo{txHash ? ` · tx ${txHash.slice(0, 10)}…` : ""}
         </p>
-        <button className="btn-ghost mt-5" onClick={() => setStage("idle")}>
-          Wink again
-        </button>
+        <div className="mt-5 flex flex-col gap-2">
+          <a href="/claim" className="btn-primary">
+            😍 Claim your own @handle — start receiving winks
+          </a>
+          <button className="btn-ghost" onClick={() => setStage("idle")}>
+            Wink again
+          </button>
+        </div>
       </div>
     );
   }
