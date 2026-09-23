@@ -2,7 +2,7 @@
   "name": "wink",
   "version": "0.1.0",
   "private": true,
-  "description": "Wink \u2014 the name layer for payments. Anyone, anywhere, paid with a wink. Built on Tempo.",
+  "description": "Wink — the name layer for payments. Anyone, anywhere, paid with a wink. Built on Tempo.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
