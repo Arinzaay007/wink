@@ -476,7 +476,12 @@ export default function DashboardPage() {
 
         {/* pay requests (payouts wedge) */}
         <section className="card p-6">
-          <h2 className="font-semibold">💸 Pay requests</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="font-semibold">💸 Pay requests</h2>
+            <Link href="/payroll" className="btn-ghost !px-3 !py-1.5 text-xs">
+              💼 Run batch payroll →
+            </Link>
+          </div>
           <p className="mt-1 text-xs text-ink-500">
             Workers ask, you approve — one tap pays them on-chain. Or send
             your own request to anyone with a handle.

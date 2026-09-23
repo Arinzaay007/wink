@@ -27,6 +27,7 @@ const Body = z.object({
   eventSlug: z.string().max(60).optional(), // spray-wall attribution
   payCodeSlug: z.string().max(80).optional(), // merchant pay-code attribution
   payRequestId: z.string().max(40).optional(), // payout: settling a pay request
+  asWage: z.boolean().optional(), // batch payroll: mark as a wage, not a wink
 });
 
 /**
@@ -52,6 +53,7 @@ export async function POST(req: Request) {
     eventSlug,
     payCodeSlug,
     payRequestId,
+    asWage,
   } = parsed.data;
   const handle = normalizeHandle(raw);
 
@@ -114,6 +116,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "amount-does-not-match-pay-request" }, { status: 400 });
     kind = "wage";
   }
+
+  // batch payroll: a direct wage, attributed as such on the ledger
+  if (asWage && kind === "wink") kind = "wage";
 
   const [transfer] = await db
     .insert(transfers)
