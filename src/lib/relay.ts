@@ -90,6 +90,34 @@ export async function relayQuote(params: {
   return json;
 }
 
+export async function relayQuoteOut(params: {
+  sender: string; // Tempo address holding pathUSD
+  destinationChainId: SourceChainId;
+  destinationToken: string; // USDC on destination
+  amountMicro: number;
+  receiver: string; // same address or other on destination chain
+}): Promise<RelayQuote> {
+  const res = await fetch(`${RELAY_API}/quote/v2`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      user: params.sender,
+      originChainId: TEMPO_CHAIN_ID,
+      destinationChainId: params.destinationChainId,
+      originCurrency: TEMPO_PATH_USD,
+      destinationCurrency: params.destinationToken,
+      amount: String(params.amountMicro),
+      tradeType: "EXACT_INPUT",
+    }),
+    signal: AbortSignal.timeout(15_000),
+  });
+  const json = (await res.json().catch(() => null)) as RelayQuote | null;
+  if (!res.ok || !json) {
+    throw new Error((json?.errors?.[0]?.message as string) ?? `route unavailable out (${res.status})`);
+  }
+  return json;
+}
+
 export async function relayStatus(requestId: string): Promise<RelayStatus> {
   const res = await fetch(
     `${RELAY_API}/intents/status/v3?requestId=${encodeURIComponent(requestId)}`,

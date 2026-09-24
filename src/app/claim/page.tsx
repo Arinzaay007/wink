@@ -195,7 +195,7 @@ export default function ClaimPage() {
                 ))}
               </div>
             </div>
-            <div className="card p-5 flex items-start gap-3 text-[12px] text-[color:var(--color-ink-2)]"><ShieldCheck size={14} className="text-[color:var(--color-neon)] mt-0.5 shrink-0" /><span>Keys never leave your browser. Non-custodial. Session HMAC + injected EIP-1193 wallet on mainnet. Demo wallet is faucet-funded on testnet.</span></div>
+            <div className="card p-5 flex items-start gap-3 text-[12px] text-[color:var(--color-ink-2)]"><ShieldCheck size={14} className="text-[color:var(--color-neon)] mt-0.5 shrink-0" /><span>Keys never leave your browser. Non-custodial. Session HMAC + injected EIP-1193 wallet on mainnet. Demo wallet is funded with real pathUSD on mainnet.</span></div>
           </div>
         </div>
       </div>

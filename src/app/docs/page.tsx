@@ -99,7 +99,7 @@ export default function DocsPage() {
 git clone https://github.com/Arinzaay007/wink
 cd wink && npm install
 
-# env (DATABASE_URL, SESSION_SECRET, TEMPO_NETWORK=testnet)
+# env (DATABASE_URL, SESSION_SECRET, TEMPO_NETWORK=mainnet)
 cp .env.example .env
 
 # schema → postgres

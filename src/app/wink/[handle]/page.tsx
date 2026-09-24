@@ -44,7 +44,7 @@ export default function WinkPage() {
               </div>
               <div className="mt-4 card p-4 flex items-start gap-3 text-[12px] text-[color:var(--color-ink-2)]">
                 <ShieldCheck size={14} className="text-[color:var(--color-neon)] mt-0.5 shrink-0" />
-                <span>Non-custodial. Keys never leave browser. Demo wallet faucet-funded on testnet. On mainnet connect MetaMask / Rabby / Tempo Wallet. Every transfer verified on-chain before confirmed.</span>
+                <span>Non-custodial. Keys never leave browser. Demo wallet funded with real pathUSD on mainnet. On mainnet connect MetaMask / Rabby / Tempo Wallet. Every transfer verified on-chain before confirmed.</span>
               </div>
             </div>
           </div>
