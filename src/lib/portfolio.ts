@@ -16,10 +16,12 @@ import { TOKEN_DECIMALS } from "./tempo";
 import { publicBrowserClient } from "./demoWallet";
 
 const SLOT = "0x20c00000000000000000000000000000000000";
-/** pathUSD + the three test stablecoin slots. */
-export const PORTFOLIO_TOKENS = [0, 1, 2, 3].map(
-  (i) => (SLOT + String(i).padStart(2, "0")) as Address
-);
+/** pathUSD + the three test stablecoin slots + USDC.e (bridge arrival). */
+export const USDC_E = "0x20C000000000000000000000b9537d11c60E8b50" as Address;
+export const PORTFOLIO_TOKENS = [
+  ...[0, 1, 2, 3].map((i) => (SLOT + String(i).padStart(2, "0")) as Address),
+  USDC_E,
+];
 
 const PORTFOLIO_ABI = [
   {

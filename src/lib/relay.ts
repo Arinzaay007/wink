@@ -25,7 +25,9 @@ export const SOURCE_CHAINS = [
 ] as const;
 
 export const TEMPO_CHAIN_ID = 4217;
-/** What lands on Tempo before the optional pathUSD swap. */
+/** Settlement asset — doctrine #5: any chain in → pathUSD out, always. */
+export const TEMPO_PATH_USD = "0x20c0000000000000000000000000000000000000";
+/** Legacy USDC.e on Tempo — kept for portfolio reading, but quotes now land as pathUSD. */
 export const TEMPO_USDC_E = "0x20C000000000000000000000b9537d11c60E8b50";
 
 export const BRIDGE_MIN_MICRO = 1_000_000; // $1 live-test floor (was $5 — raise to 5_000_000 at launch)
@@ -72,7 +74,7 @@ export async function relayQuote(params: {
       originChainId: params.sourceChainId,
       destinationChainId: TEMPO_CHAIN_ID,
       originCurrency: params.sourceToken,
-      destinationCurrency: TEMPO_USDC_E,
+      destinationCurrency: TEMPO_PATH_USD,
       amount: String(params.amountMicro),
       tradeType: "EXACT_INPUT",
     }),
