@@ -6,6 +6,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { loadDemoWallet, createDemoWallet, fetchBalance } from "@/lib/demoWallet";
+import { fetchPortfolio, type Portfolio } from "@/lib/portfolio";
 import { formatMicro } from "@/lib/tempo";
 import TipForm from "@/components/TipForm";
 import TelegramCard from "@/components/TelegramCard";
@@ -62,6 +63,7 @@ export default function DashboardPage() {
   const [state, setState] = useState<"loading" | "ok" | "unauthed" | "nodb">("loading");
   const [walletAddr, setWalletAddr] = useState<string | null>(null);
   const [balance, setBalance] = useState<number | null>(null);
+  const [portfolio, setPortfolio] = useState<Portfolio | null>(null);
   const [funding, setFunding] = useState(false);
   const [myEvents, setMyEvents] = useState<MyEvent[]>([]);
   const [eventTitle, setEventTitle] = useState("");
@@ -77,6 +79,12 @@ export default function DashboardPage() {
   const [sentReqs, setSentReqs] = useState<PayReq[]>([]);
   const [payingReqId, setPayingReqId] = useState<string | null>(null);
   const [reqTarget, setReqTarget] = useState("");
+
+  const refreshPortfolio = useCallback((addr: string) => {
+    fetchPortfolio(addr as `0x${string}`)
+      .then(setPortfolio)
+      .catch(() => {});
+  }, []);
 
   const load = useCallback(async () => {
     const res = await fetch("/api/me");
@@ -123,8 +131,9 @@ export default function DashboardPage() {
     if (w) {
       setWalletAddr(w.address);
       fetchBalance(w.address).then(setBalance).catch(() => {});
+      refreshPortfolio(w.address);
     }
-  }, [load, loadEvents, loadPayCodes, loadRequests]);
+  }, [load, loadEvents, loadPayCodes, loadRequests, refreshPortfolio]);
 
   const createEvent = async () => {
     if (!eventTitle.trim()) return;
@@ -170,6 +179,7 @@ export default function DashboardPage() {
       body: JSON.stringify({ address: w.address, kind: "inapp", label: "demo wallet" }),
     });
     setBalance(await fetchBalance(w.address));
+    refreshPortfolio(w.address);
     load();
   };
 
@@ -183,6 +193,7 @@ export default function DashboardPage() {
     });
     setTimeout(async () => {
       setBalance(await fetchBalance(walletAddr as `0x${string}`));
+      refreshPortfolio(walletAddr);
       setFunding(false);
     }, 1500);
   };
@@ -300,11 +311,30 @@ export default function DashboardPage() {
                     <div className="mono break-all text-xs text-ink-300">{addr}</div>
                   </div>
                 ))}
-              {balance !== null && (
-                <p className="text-ink-300">
-                  balance: <span className="mono font-semibold text-ink-100">${balance.toFixed(2)}</span>{" "}
-                  pathUSD
-                </p>
+              {portfolio && portfolio.assets.length > 0 ? (
+                <div className="rounded-xl border border-line p-3">
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-xs uppercase tracking-wider text-ink-500">Portfolio</span>
+                    <span className="mono text-base font-bold text-ink-100">
+                      ${portfolio.totalUsd.toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="mt-2 space-y-1.5 border-t border-line pt-2">
+                    {portfolio.assets.map((a) => (
+                      <div key={a.address} className="flex justify-between text-xs text-ink-300">
+                        <span>{a.symbol}</span>
+                        <span className="mono">${a.balance.toFixed(2)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                balance !== null && (
+                  <p className="text-ink-300">
+                    balance: <span className="mono font-semibold text-ink-100">${balance.toFixed(2)}</span>{" "}
+                    pathUSD
+                  </p>
+                )
               )}
               <button onClick={fund} disabled={funding} className="btn-ghost">
                 {funding ? "Funding…" : "⛲ Top up from testnet faucet"}
