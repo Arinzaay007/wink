@@ -3,8 +3,9 @@ import { eq } from "drizzle-orm";
 import { getDb } from "@/db";
 import { wallets } from "@/db/schema";
 import { getSessionUserId } from "@/lib/session";
-import { getStableBalance, publicClient } from "@/lib/tempo";
+import { getStableBalance } from "@/lib/tempo";
 import { getAllBalances } from "@/lib/baseForwarder";
+import { privateKeyToAccount } from "viem/accounts";
 import type { Address } from "viem";
 
 export const runtime = "nodejs";
@@ -18,19 +19,32 @@ export async function GET(req: Request) {
   const queryAddr = url.searchParams.get("address") as Address | null;
 
   let addresses: Address[] = [];
+  const burner = process.env.BURNER_PRIVATE_KEY
+    ? (() => {
+        try {
+          return privateKeyToAccount(process.env.BURNER_PRIVATE_KEY as `0x${string}`).address as Address;
+        } catch {
+          return null;
+        }
+      })()
+    : null;
 
   if (queryAddr) {
     addresses = [queryAddr];
+    if (burner && !addresses.includes(burner)) addresses.push(burner);
   } else {
     const userId = await getSessionUserId();
     if (!userId) {
-      // guest — return empty, client will load demo wallet locally
-      return NextResponse.json({ wallets: [], guest: true });
-    }
-    const rows = await db.query.wallets.findMany({ where: eq(wallets.userId, userId) });
-    addresses = rows.map((r) => r.address as Address);
-    if (addresses.length === 0) {
-      return NextResponse.json({ wallets: [], guest: false, message: "no wallets linked" });
+      // guest — include burner for demo + return guest flag
+      if (burner) addresses = [burner];
+      else return NextResponse.json({ wallets: [], guest: true, forwarder: burner });
+    } else {
+      const rows = await db.query.wallets.findMany({ where: eq(wallets.userId, userId) });
+      addresses = rows.map((r) => r.address as Address);
+      if (burner && !addresses.includes(burner)) addresses.push(burner);
+      if (addresses.length === 0) {
+        return NextResponse.json({ wallets: [], guest: false, message: "no wallets linked", forwarder: burner });
+      }
     }
   }
 

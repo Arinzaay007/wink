@@ -76,4 +76,7 @@ const loop = setInterval(tick, POLL_MS);
 process.once("SIGINT", () => { clearInterval(loop); process.exit(0); });
 process.once("SIGTERM", () => { clearInterval(loop); process.exit(0); });
 
-await tick();
+(async () => {
+  await tick();
+})();
+
