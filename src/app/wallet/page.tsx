@@ -167,7 +167,7 @@ export default function WalletPage() {
             <div className="card p-5">
               <div className="text-mono text-[10px] uppercase tracking-[0.18em] text-[color:var(--color-ink-3)] mb-2">live proof</div>
               <div className="text-[13px] text-white">Base 4.99 USDC → 4.962958 pathUSD</div>
-              <div className="text-mono text-[10px] text-[color:var(--color-ink-3)] mt-1">direct 0x20c0…0000 · Tempo testnet · ~12s · verified</div>
+              <div className="text-mono text-[10px] text-[color:var(--color-ink-3)] mt-1">direct 0x20c0…0000 · Tempo mainnet · real funds · verified</div>
               <Link href="/docs" className="mt-4 inline-flex items-center gap-1 text-[12px] text-[color:var(--color-neon)]">Read architecture <ArrowRight size={12} /></Link>
             </div>
           </div>

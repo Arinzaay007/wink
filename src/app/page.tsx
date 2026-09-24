@@ -81,7 +81,7 @@ export default function Home() {
             className="flex items-center justify-center gap-3 mb-8"
           >
             <span className="status-pill">
-              <span className="dot-live" /> live on tempo · testnet
+              <span className="dot-live" /> live on tempo · mainnet
             </span>
           </motion.div>
 
@@ -494,11 +494,11 @@ export default function Home() {
             </Link>
           </div>
           <div className="mt-14 inline-flex items-center gap-4 text-mono text-xs text-[color:var(--color-ink-3)]">
-            <span>free during testnet</span>
+            <span>live on mainnet</span>
             <span className="text-[color:var(--color-neon)]">✦</span>
             <span>0% platform fee</span>
             <span className="text-[color:var(--color-neon)]">✦</span>
-            <span>settled on tempo · pathUSD</span>
+            <span>settled on tempo · pathUSD · real funds</span>
           </div>
         </div>
       </section>

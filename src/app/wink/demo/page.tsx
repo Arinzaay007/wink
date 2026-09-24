@@ -25,7 +25,7 @@ export default function WinkDemoPage() {
           <div>
             <div className="chip chip-red mb-6"><Send size={11} /> /wink/{recipientHandle} · demo</div>
             <h1 className="text-display text-[56px] sm:text-[72px] leading-[0.92] tracking-[-0.04em]">Send a <em className="italic font-light neon-text">wink</em><br /> to <span className="text-white">@{recipientHandle}</span><span className="text-[color:var(--color-neon)]">.</span></h1>
-            <p className="mt-6 text-[color:var(--color-ink-2)] max-w-md leading-relaxed">Demo wallet is faucet-funded on Tempo testnet. On mainnet you&apos;ll connect MetaMask / Rabby / Frame.</p>
+            <p className="mt-6 text-[color:var(--color-ink-2)] max-w-md leading-relaxed">Wallet is funded on Tempo mainnet. On mainnet you&apos;ll connect MetaMask / Rabby / Frame.</p>
 
             <div className="mt-12 flex items-center gap-3 text-xs text-mono uppercase tracking-[0.18em]">
               {(["compose", "sign", "confirmed"] as const).map((s, i) => {

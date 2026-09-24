@@ -85,7 +85,7 @@ export function Footer() {
           </div>
           <div className="flex items-center gap-5 text-xs text-mono text-[color:var(--color-ink-3)]">
             <span className="flex items-center gap-2">
-              <span className="dot-live" /> tempo · testnet · 42431
+              <span className="dot-live" /> tempo · mainnet · 42431
             </span>
             <span>v0.4.2</span>
             <span className="text-[color:var(--color-neon)]">0% platform fee</span>

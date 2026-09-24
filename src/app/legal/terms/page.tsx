@@ -13,7 +13,7 @@ const SECTIONS: { title: string; body: string[] }[] = [
   {
     title: "Testnet stage — no real value",
     body: [
-      "During the preview, transfers settle on the Tempo testnet (Moderato). Testnet tokens are supplied by a faucet, have no monetary value, and cannot be exchanged for real money. When and only when we formally promote to mainnet will this change — and we will say so loudly, in writing, first.",
+      "During the preview, transfers settle on the Tempo mainnet (Moderato). Mainnet pathUSD is real stablecoin with monetary value, and cannot be exchanged for real money. When and only when we formally promote to mainnet will this change — and we will say so loudly, in writing, first.",
     ],
   },
   {
