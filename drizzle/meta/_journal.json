@@ -15,6 +15,13 @@
       "when": 1790206174603,
       "tag": "0001_auth_codes",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790210487773,
+      "tag": "0002_zone_settlement",
+      "breakpoints": true
     }
   ]
 }

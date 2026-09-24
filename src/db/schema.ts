@@ -208,6 +208,13 @@ export const transfers = pgTable(
       .default("named"),
     txHash: text("tx_hash"),
     status: transferStatusEnum("status").notNull().default("pending"),
+    // ── private settlement via Tempo Zones (testnet preview) ─────────
+    // "public" = settled on Tempo L1, visible in the explorer.
+    // "zone"   = deposited into a Zone; the L1 deposit tx is visible, but
+    //            the credit to the recipient is private (zone tx below).
+    settlement: text("settlement").notNull().default("public"),
+    zoneId: bigint("zone_id", { mode: "number" }),
+    zoneTxHash: text("zone_tx_hash"),
     error: text("error"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     confirmedAt: timestamp("confirmed_at"),
