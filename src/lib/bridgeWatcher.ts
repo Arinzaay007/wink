@@ -23,6 +23,8 @@ import { relayStatus, TEMPO_USDC_E, SOURCE_CHAINS } from "./relay";
 import {
   PATH_USD,
   publicClient,
+  publicClientMainnet,
+  publicClientTestnet,
   verifyArrivalOnTempo,
 } from "./tempo";
 import { normalizeHandle } from "./handles";
@@ -197,35 +199,48 @@ export async function creditBridgeArrival(
  * Watch Tempo directly for a Transfer into the receiver (relay.link
  * manual flows have no requestId we can poll). Scans from the watch's
  * lastScannedBlock, bounded to a lookback window for fresh watches.
+ * Tries mainnet first (live funds), then testnet (dev).
  */
 export async function scanArrival(db: WinkDb, watch: BridgeWatch): Promise<BridgeWatch> {
-  const latest = await publicClient.getBlockNumber();
-  const floor = latest - SCAN_LOOKBACK_BLOCKS;
-  const from =
-    watch.lastScannedBlock != null && BigInt(watch.lastScannedBlock) > floor
-      ? BigInt(watch.lastScannedBlock) + 1n
-      : floor;
-  if (from > latest) return watch;
+  const clients = [publicClientMainnet, publicClientTestnet, publicClient];
+  for (const client of clients) {
+    try {
+      const latest = await client.getBlockNumber();
+      const floor = latest - SCAN_LOOKBACK_BLOCKS;
+      const from =
+        watch.lastScannedBlock != null && BigInt(watch.lastScannedBlock) > floor
+          ? BigInt(watch.lastScannedBlock) + 1n
+          : floor;
+      if (from > latest) continue;
 
-  const logs = await publicClient.getLogs({
-    address: [TEMPO_USDC_E as Address, PATH_USD as Address],
-    event: TRANSFER_EVENT,
-    args: { to: watch.receiver as Address },
-    fromBlock: from,
-    toBlock: latest,
-  });
+      const logs = await client.getLogs({
+        address: [TEMPO_USDC_E as Address, PATH_USD as Address],
+        event: TRANSFER_EVENT,
+        args: { to: watch.receiver as Address },
+        fromBlock: from,
+        toBlock: latest,
+      });
 
-  const hit = matchArrivalLogs(logs, watch.receiver as Address, watch.amountMicro);
-  if (!hit) {
+      const hit = matchArrivalLogs(logs, watch.receiver as Address, watch.amountMicro);
+      if (hit) {
+        return confirmWatch(db, watch, hit.transactionHash as Hash, Number(hit.blockNumber ?? 0));
+      }
+    } catch {
+      continue;
+    }
+  }
+  // no hit — advance cursor on the env client
+  try {
+    const latest = await publicClient.getBlockNumber();
     const rows = await db
       .update(bridgeWatches)
       .set({ lastScannedBlock: Number(latest), updatedAt: new Date() })
       .where(eq(bridgeWatches.id, watch.id))
       .returning();
     return rows[0];
+  } catch {
+    return watch;
   }
-
-  return confirmWatch(db, watch, hit.transactionHash as Hash, Number(hit.blockNumber ?? 0));
 }
 
 // ── confirmation ─────────────────────────────────────────────────────

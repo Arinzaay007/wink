@@ -46,6 +46,16 @@ export const publicClient = createPublicClient({
   transport: http(),
 });
 
+/** Always-on clients for cross-chain verification (doctrine #5) */
+export const publicClientMainnet = createPublicClient({
+  chain: Chain.tempoMainnet,
+  transport: http(),
+});
+export const publicClientTestnet = createPublicClient({
+  chain: Chain.tempoModerato,
+  transport: http(),
+});
+
 // Optional platform wallet (testnet fee sponsorship / demos)
 export function platformWalletClient() {
   const key = process.env.TEMPO_SPONSOR_KEY as `0x${string}` | undefined;
@@ -260,27 +270,34 @@ export async function verifyPaymentOnChain(
  * filled a payment on Tempo, we verify independently — scan the
  * destination tx for an ERC-20 Transfer crediting the recipient with at
  * least the expected amount. Solver status APIs are helpful; the chain is
- * the truth.
+ * the truth. Tries mainnet first (live), then testnet (dev).
  */
 export async function verifyArrivalOnTempo(
   txHash: Hash,
   expect: { to: Address; amountMicro: number }
 ): Promise<{ ok: true; blockNumber: bigint } | { ok: false; reason: string }> {
-  let receipt;
+  for (const client of [publicClientMainnet, publicClientTestnet, publicClient]) {
+    try {
+      const receipt = await client.getTransactionReceipt({ hash: txHash });
+      if (receipt.status !== "success") continue;
+      const toTopic = pad(expect.to.toLowerCase() as Address).toLowerCase();
+      const hit = receipt.logs.find(
+        (l) =>
+          l.topics[0]?.toLowerCase() === ERC20_TRANSFER_TOPIC.toLowerCase() &&
+          l.topics[2]?.toLowerCase() === toTopic &&
+          BigInt(l.data || "0x0") >= BigInt(expect.amountMicro)
+      );
+      if (hit) return { ok: true, blockNumber: receipt.blockNumber };
+    } catch {
+      continue;
+    }
+  }
+  // final attempt to surface a meaningful reason from the env client
   try {
-    receipt = await publicClient.getTransactionReceipt({ hash: txHash });
+    const receipt = await publicClient.getTransactionReceipt({ hash: txHash });
+    if (receipt.status !== "success") return { ok: false, reason: "tx-reverted" };
+    return { ok: false, reason: "no-matching-arrival" };
   } catch {
     return { ok: false, reason: "receipt-not-found" };
   }
-  if (receipt.status !== "success") return { ok: false, reason: "tx-reverted" };
-
-  const toTopic = pad(expect.to.toLowerCase() as Address).toLowerCase();
-  const hit = receipt.logs.find(
-    (l) =>
-      l.topics[0]?.toLowerCase() === ERC20_TRANSFER_TOPIC.toLowerCase() &&
-      l.topics[2]?.toLowerCase() === toTopic &&
-      BigInt(l.data || "0x0") >= BigInt(expect.amountMicro),
-  );
-  if (!hit) return { ok: false, reason: "no-matching-arrival" };
-  return { ok: true, blockNumber: receipt.blockNumber };
 }

@@ -28,7 +28,7 @@ export const TEMPO_CHAIN_ID = 4217;
 /** What lands on Tempo before the optional pathUSD swap. */
 export const TEMPO_USDC_E = "0x20C000000000000000000000b9537d11c60E8b50";
 
-export const BRIDGE_MIN_MICRO = 5_000_000; // $5 cross-chain minimum
+export const BRIDGE_MIN_MICRO = 1_000_000; // $1 live-test floor (was $5 — raise to 5_000_000 at launch)
 export const BRIDGE_MAX_MICRO = 500_000_000; // $500 cap (solver inventory)
 
 export type SourceChainId = (typeof SOURCE_CHAINS)[number]["id"];
