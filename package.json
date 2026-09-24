@@ -18,7 +18,8 @@
     "bot": "tsx src/bot/index.ts",
     "reconcile": "tsx scripts/reconcile-loop.ts",
     "bridge:watch": "tsx scripts/bridge-watch-loop.ts",
-    "loops": "tsx scripts/reconcile-loop.ts & tsx scripts/bridge-watch-loop.ts"
+    "base:forward": "tsx scripts/base-forward-loop.ts",
+    "loops": "tsx scripts/reconcile-loop.ts & tsx scripts/bridge-watch-loop.ts & tsx scripts/base-forward-loop.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",
