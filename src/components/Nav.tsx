@@ -11,6 +11,7 @@ const NAV = [
   { to: "/wink/demo", label: "Wink" },
   { to: "/wall/wedding", label: "Wall" },
   { to: "/pay", label: "Pay" },
+  { to: "/wallet", label: "Wallet" },
   { to: "/request/lina", label: "Request" },
   { to: "/payroll", label: "Payroll" },
   { to: "/agents", label: "Agents" },
@@ -40,7 +41,7 @@ export function Nav() {
           </Link>
 
           <nav className="hidden lg:flex items-center gap-1 text-[13px] text-[color:var(--color-ink-2)]">
-            {NAV.slice(0, 7).map((n) => {
+            {NAV.slice(0, 8).map((n) => {
               const active = pathname === n.to || (n.to !== "/" && pathname.startsWith(n.to));
               return (
                 <Link
