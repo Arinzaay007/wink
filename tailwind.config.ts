@@ -1,73 +1,58 @@
 import type { Config } from "tailwindcss";
 
 /**
- * Wink design system — "Paper & Gold"
- * Warm cream paper, deep espresso ink, refined gold.
- * A private bank crossed with a Lagos creative studio.
+ * Wink design system — Crimson / Black Neon
+ * From wink-design 2015ca5: bg #050505, neon #ff1f3d, Bricolage + Geist
  */
 const config: Config = {
   content: ["./src/**/*.{ts,tsx}"],
   theme: {
     extend: {
       colors: {
-        // surfaces — warm cream family
-        paper: {
-          DEFAULT: "#F7F2E7", // page
-          raised: "#FDFBF4", // cards, inputs
-          dim: "#EFE7D3", // hovers, insets
-          deep: "#E5D9BE", // stronger insets
+        bg: "#050505",
+        surface: {
+          DEFAULT: "#0b0b0c",
+          2: "#111113",
+          3: "#16161a",
         },
-        // espresso scale — text & intentional dark blocks
-        ink: {
-          950: "#1C1610",
-          900: "#2B2318",
-          800: "#443826",
-          700: "#61513A",
-          500: "#94856B",
-          400: "#7A6B52",
-          300: "#5C4E39",
-          200: "#443826",
-          100: "#2B2318",
-        },
-        // borders
         line: {
-          DEFAULT: "#E2D7BE",
-          strong: "#D2C3A0",
+          DEFAULT: "#1f1f25",
+          2: "#2a2a33",
         },
-        // the wink gold
+        neon: {
+          DEFAULT: "#ff1f3d",
+          bright: "#ff3355",
+          deep: "#c80d28",
+          soft: "rgba(255, 31, 61, 0.12)",
+          glow: "rgba(255, 31, 61, 0.55)",
+        },
+        ink: {
+          DEFAULT: "#f5f5f7",
+          2: "#a8a8b3",
+          3: "#6a6a76",
+          4: "#3d3d46",
+        },
+        // legacy aliases for existing components
+        paper: {
+          DEFAULT: "#050505",
+          raised: "#0b0b0c",
+          dim: "#111113",
+        },
         wink: {
-          DEFAULT: "#C9972B",
-          soft: "#E9CF8F",
-          deep: "#9A7218",
-          ink: "#6E5112",
-        },
-        // money green — deep, premium
-        mint: {
-          DEFAULT: "#3E7C4F",
+          DEFAULT: "#ff1f3d",
+          soft: "rgba(255, 31, 61, 0.12)",
+          deep: "#c80d28",
+          ink: "#ff1f3d",
         },
       },
       fontFamily: {
-        sans: ["var(--font-sans)", "system-ui", "sans-serif"],
-        display: ["var(--font-display)", "Georgia", "serif"],
-        mono: ["ui-monospace", "SFMono-Regular", "Menlo", "monospace"],
+        sans: ["Geist", "system-ui", "sans-serif"],
+        display: ["Bricolage Grotesque", "Georgia", "serif"],
+        mono: ["JetBrains Mono", "ui-monospace", "monospace"],
       },
       boxShadow: {
-        card: "0 1px 2px rgba(28,22,16,0.04), 0 8px 24px -12px rgba(28,22,16,0.12)",
-        lift: "0 2px 4px rgba(28,22,16,0.06), 0 16px 40px -16px rgba(28,22,16,0.2)",
-      },
-      animation: {
-        "wink-in": "winkIn 0.4s cubic-bezier(0.22, 1, 0.36, 1)",
-        float: "float 3s ease-in-out infinite",
-      },
-      keyframes: {
-        winkIn: {
-          "0%": { opacity: "0", transform: "translateY(8px) scale(0.97)" },
-          "100%": { opacity: "1", transform: "translateY(0) scale(1)" },
-        },
-        float: {
-          "0%, 100%": { transform: "translateY(0)" },
-          "50%": { transform: "translateY(-6px)" },
-        },
+        card: "0 1px 2px rgba(0,0,0,0.2), 0 8px 24px -12px rgba(0,0,0,0.4)",
+        lift: "0 2px 4px rgba(0,0,0,0.2), 0 16px 40px -16px rgba(0,0,0,0.5)",
       },
     },
   },

@@ -16,7 +16,7 @@ import { relayQuote, SOURCE_CHAINS, type SourceChainId } from "./relay";
 import { registerWatch } from "./bridgeWatcher";
 import type { WinkDb } from "@/db";
 
-const CHAIN_CLIENTS: Record<number, ReturnType<typeof createPublicClient>> = {
+const CHAIN_CLIENTS: Record<number, any> = {
   8453: createPublicClient({ chain: base, transport: http("https://mainnet.base.org") }),
   1: createPublicClient({ chain: mainnet, transport: http("https://eth.llamarpc.com") }),
   42161: createPublicClient({ chain: arbitrum, transport: http("https://arb1.arbitrum.io/rpc") }),
@@ -69,7 +69,7 @@ export async function getAllBalances(address: Address) {
       }
     })
   );
-  return results.filter(Boolean) as Awaited<ReturnType<typeof getBalancesForChain>> & { chainName: string }[];
+  return results.filter((r): r is NonNullable<typeof r> => r !== null);
 }
 
 /**
@@ -139,7 +139,7 @@ export async function autoForwardOnce(params: {
     for (const item of step.items) {
       const data = item.data as { to: Address; data: `0x${string}`; value: string } | undefined;
       if (!data) continue;
-      const hash = await walletClient.sendTransaction({
+      const hash = await (walletClient as any).sendTransaction({
         to: data.to,
         data: data.data,
         value: data.value ? BigInt(data.value) : 0n,
@@ -193,7 +193,7 @@ export async function checkRecentDepositsForChain(
     fromBlock,
     toBlock,
   });
-  return logs.map(l => ({
+  return logs.map((l: any) => ({
     chainId,
     chainName: SOURCE_CHAINS.find(c => c.id === chainId)?.name,
     blockNumber: l.blockNumber,
