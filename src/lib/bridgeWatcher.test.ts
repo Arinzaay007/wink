@@ -44,8 +44,13 @@ describe("matchArrivalLogs", () => {
   });
 
   it("rejects short payment", () => {
-    const short = log({ args: { to: receiver, value: 4_999_999n } });
+    const short = log({ args: { to: receiver, value: 4_000_000n } });
     expect(matchArrivalLogs([short], receiver, 5_000_000)).toBeNull();
+  });
+
+  it("accepts within 10% slippage (bridge fees)", () => {
+    const almost = log({ args: { to: receiver, value: 4_600_000n } }); // 8% short
+    expect(matchArrivalLogs([almost], receiver, 5_000_000)).not.toBeNull();
   });
 
   it("is case-insensitive on the address", () => {

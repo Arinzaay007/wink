@@ -81,8 +81,9 @@ export interface ArrivalLog {
 }
 
 /**
- * Find the first Transfer log paying `receiver` at least `amountMicro`.
- * Pure — callers pass logs, which keeps this trivially testable.
+ * Find the first Transfer log paying `receiver` at least `amountMicro`
+ * minus reasonable bridge fees. Pure — callers pass logs, which keeps this
+ * trivially testable. Allows up to 10% slippage (Relay fees ~0.4%).
  */
 export function matchArrivalLogs(
   logs: ArrivalLog[],
@@ -90,9 +91,10 @@ export function matchArrivalLogs(
   amountMicro: number
 ): ArrivalLog | null {
   const want = receiver.toLowerCase();
+  const minAccept = (BigInt(amountMicro) * 90n) / 100n; // 10% slippage tolerance
   for (const log of logs) {
     if ((log.args.to ?? "").toLowerCase() !== want) continue;
-    if ((log.args.value ?? 0n) < BigInt(amountMicro)) continue;
+    if ((log.args.value ?? 0n) < minAccept) continue;
     return log;
   }
   return null;
