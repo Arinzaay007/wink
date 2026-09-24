@@ -75,6 +75,23 @@ export async function POST(req: Request) {
     });
 
     const requestId = quote.steps?.find((s) => s.requestId)?.requestId ?? null;
+
+    // Watcher: the recipient sees this transfer tracked into their
+    // dashboard from the moment the quote exists — even if the payer
+    // closes their tab. Non-fatal: a watch failure never breaks a quote.
+    try {
+      const { registerWatch } = await import("@/lib/bridgeWatcher");
+      await registerWatch(db, recipient!.id, {
+        requestId,
+        handle,
+        receiver: wallet.address,
+        sourceChain: chain.name,
+        amountMicro,
+      });
+    } catch {
+      /* watch is a nice-to-have, the pay flow is not */
+    }
+
     return NextResponse.json({
       chainId: chain.id,
       chainName: chain.name,

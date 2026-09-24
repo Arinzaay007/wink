@@ -22,6 +22,13 @@
       "when": 1790210487773,
       "tag": "0002_zone_settlement",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1790264009812,
+      "tag": "0003_bridge_watches",
+      "breakpoints": true
     }
   ]
 }

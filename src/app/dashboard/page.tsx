@@ -8,6 +8,7 @@ import Link from "next/link";
 import { loadDemoWallet, createDemoWallet, fetchBalance } from "@/lib/demoWallet";
 import { fetchPortfolio, type Portfolio } from "@/lib/portfolio";
 import { formatMicro } from "@/lib/tempo";
+import BridgeWatchCard from "@/components/BridgeWatchCard";
 import TipForm from "@/components/TipForm";
 import TelegramCard from "@/components/TelegramCard";
 
@@ -342,6 +343,9 @@ export default function DashboardPage() {
             </div>
           )}
         </section>
+
+        {/* bridge watcher */}
+        <BridgeWatchCard defaultReceiver={walletAddr ?? undefined} />
 
         {/* privacy */}
         <section className="card p-6">

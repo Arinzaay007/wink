@@ -320,8 +320,54 @@ export const authCodes = pgTable(
   })
 );
 
+export const bridgeWatchStatusEnum = pgEnum("bridge_watch_status", [
+  "watching", // waiting on origin deposit / solver fill
+  "verifying", // Relay reports success — independently verifying on Tempo
+  "confirmed", // arrival verified on Tempo; ledger row written
+  "failed",
+]);
+
+/**
+ * Cross-chain transfer watcher — "any chain in, Tempo out" tracking.
+ * A watch is created when a bridge transfer starts (via our quote, or
+ * tracked manually for a transfer executed on relay.link itself).
+ * The watcher never trusts Relay's word: confirmation only happens after
+ * an independent on-chain verification of the arrival on Tempo.
+ * requestId is null for on-chain-only watches (manual relay.link flows);
+ * Postgres unique indexes allow multiple NULLs, so dedupe still works.
+ */
+export const bridgeWatches = pgTable(
+  "bridge_watches",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    requestId: text("request_id"), // relay requestId (null → on-chain watch)
+    handle: text("handle"), // destination @handle (display only)
+    receiver: text("receiver").notNull(), // Tempo address receiving funds
+    sourceChain: text("source_chain").notNull(), // base | ethereum | …
+    amountMicro: bigint("amount_micro", { mode: "number" }).notNull(),
+    currency: text("currency").notNull().default("USDC.e"),
+    status: bridgeWatchStatusEnum("status").notNull().default("watching"),
+    progress: text("progress"),
+    destTxHash: text("dest_tx_hash"),
+    blockNumber: bigint("block_number", { mode: "number" }),
+    lastScannedBlock: bigint("last_scanned_block", { mode: "number" }),
+    error: text("error"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+    confirmedAt: timestamp("confirmed_at"),
+  },
+  (t) => ({
+    requestIdUq: uniqueIndex("bridge_watches_request_id_uq").on(t.requestId),
+    userIdx: index("bridge_watches_user_idx").on(t.userId, t.createdAt),
+  })
+);
+
 export type User = typeof users.$inferSelect;
 export type Username = typeof usernames.$inferSelect;
 export type Wallet = typeof wallets.$inferSelect;
 export type Transfer = typeof transfers.$inferSelect;
 export type TelegramLink = typeof telegramLinks.$inferSelect;
+export type BridgeWatch = typeof bridgeWatches.$inferSelect;
