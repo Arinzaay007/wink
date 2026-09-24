@@ -66,7 +66,7 @@ export default function WalletPage() {
     setSwapResult(null);
     try {
       const amountMicro = Math.round(parseFloat(swapAmount) * 1_000_000);
-      const res = await fetch("/api/bridge/out", {
+      const res = await fetch("/api/bridge/reverse", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ sender: mainWallet.address, destinationChainId: destChainId, amountMicro }),
