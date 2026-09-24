@@ -45,7 +45,7 @@ const POLL_MS = Number(process.env.FORWARDER_INTERVAL_MS ?? 15_000);
 async function tick() {
   try {
     const all = await getAllBalances(account.address);
-    const withFunds = all.filter(b => b.usdcRaw > 0n);
+    const withFunds = all.filter((b: any) => b.usdcRaw > 0n);
     if (withFunds.length === 0) return;
 
     for (const bal of withFunds) {
@@ -53,7 +53,7 @@ async function tick() {
       try {
         const res = await autoForwardOnce({
           db: db ?? undefined,
-          privateKey: key,
+          privateKey: key as `0x${string}`,
           tempoReceiver: receiver,
           sourceChainId: bal.chainId as any,
           minMicro: 500_000,
