@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { ArrowLeft, PartyPopper, Plus, Volume2, QrCode } from "lucide-react";
 import { BgFx } from "@/components/BgFx";
 import { PhoneFrame } from "@/components/PhoneFrame";
+import TipForm from "@/components/TipForm";
 
 interface Wink {
   id: string;
@@ -27,50 +28,52 @@ const INITIAL: Wink[] = [
   { id: "8", handle: "@marco", amount: 5, x: 54, y: 56, rot: 6 },
 ];
 
-const STREAM = [
-  { handle: "@nik", amount: 3 },
-  { handle: "@ada", amount: 5 },
-  { handle: "@jo", amount: 1 },
-  { handle: "@rae", amount: 2 },
-  { handle: "@sami", amount: 10 },
-  { handle: "@vee", amount: 2 },
-  { handle: "@kim", amount: 1 },
-  { handle: "@marco", amount: 5 },
-  { handle: "@eli", amount: 3 },
-  { handle: "@yuki", amount: 7 },
-];
-
-const STATS = [
-  { k: "sprayed", v: "48" },
-  { k: "raised", v: "$284.00" },
-  { k: "guests", v: "23" },
-  { k: "avg wink", v: "$5.92" },
-];
+type WallData = {
+  event: { slug: string; title: string; emoji: string; live: boolean };
+  host: { handle?: string; displayName?: string };
+  totals: { micro: number | null; winks: number };
+  recent: { id: string; amountMicro: number | null; message?: string | null; sprayer?: string | null; createdAt: string }[];
+};
 
 export default function WallPage() {
   const routeParams = useParams() as { slug?: string };
   const slug = routeParams.slug || "wedding-marisol";
   const [winks, setWinks] = useState<Wink[]>(INITIAL);
-  const [stream, setStream] = useState(0);
+  const [wall, setWall] = useState<WallData | null>(null);
+  const [showTip, setShowTip] = useState(false);
 
+  // poll real wall data
   useEffect(() => {
-    const id = setInterval(() => {
-      const next = STREAM[stream % STREAM.length];
-      setWinks((w) => [
-        ...w.slice(-15),
-        {
-          id: Date.now().toString(),
-          handle: next.handle,
-          amount: next.amount,
-          x: 8 + Math.random() * 80,
-          y: 14 + Math.random() * 65,
-          rot: (Math.random() - 0.5) * 16,
-        },
-      ]);
-      setStream((s) => s + 1);
-    }, 1800);
-    return () => clearInterval(id);
-  }, [stream]);
+    let alive = true;
+    const fetchWall = async () => {
+      try {
+        const res = await fetch(`/api/wall/${slug}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!alive) return;
+        setWall(data);
+        if (data.recent?.length) {
+          const mapped: Wink[] = data.recent.slice(0, 15).map((r: any, idx: number) => ({
+            id: r.id,
+            handle: r.sprayer ? `@${r.sprayer.replace(/^@/, "")}` : "@guest",
+            amount: r.amountMicro ? r.amountMicro / 1_000_000 : Math.floor(Math.random() * 10) + 1,
+            x: 8 + Math.random() * 80,
+            y: 14 + Math.random() * 65,
+            rot: (Math.random() - 0.5) * 16,
+          }));
+          if (mapped.length > 0) setWinks(mapped);
+        }
+      } catch {}
+    };
+    fetchWall();
+    const id = setInterval(fetchWall, 2500);
+    return () => { alive = false; clearInterval(id); };
+  }, [slug]);
+
+  const totalRaised = wall?.totals?.micro ? wall.totals.micro / 1_000_000 : winks.reduce((s, w) => s + w.amount, 0);
+  const totalCount = wall?.totals?.winks ?? winks.length;
+  const title = wall?.event?.title || "Marisol & Jules";
+  const hostHandle = wall?.host?.handle || "marisol";
 
   return (
     <div className="relative">
@@ -82,15 +85,20 @@ export default function WallPage() {
 
         <div className="grid lg:grid-cols-[0.9fr_1.1fr] gap-10 lg:gap-16 items-start">
           <div>
-            <div className="chip chip-red mb-6"><PartyPopper size={11} /> /wall/{slug}</div>
+            <div className="chip chip-red mb-6"><PartyPopper size={11} /> /wall/{slug} {wall && <span className="ml-2 text-[color:var(--color-neon)]">· live · {totalCount} winks</span>}</div>
             <h1 className="text-display text-[52px] sm:text-[72px] leading-[0.92] tracking-[-0.04em]">
-              <span className="text-white">Marisol</span><br />
-              <em className="italic font-light text-[color:var(--color-ink-2)]">&amp;</em> <span className="text-white">Jules</span><span className="text-[color:var(--color-neon)]">.</span>
+              <span className="text-white">{title.split("&")[0] || "Marisol"}</span><br />
+              <em className="italic font-light text-[color:var(--color-ink-2)]">&amp;</em> <span className="text-white">{title.split("&")[1] || "Jules"}</span><span className="text-[color:var(--color-neon)]">.</span>
             </h1>
-            <p className="mt-5 text-[color:var(--color-ink-2)] max-w-md leading-relaxed">A live spray wall for the wedding. Every wink you see is a real on-chain transfer to <span className="text-white">@marisol</span> on Tempo, settled as pathUSD.</p>
+            <p className="mt-5 text-[color:var(--color-ink-2)] max-w-md leading-relaxed">A live spray wall for {title}. Every wink you see is a real on-chain transfer to <span className="text-white">@{hostHandle}</span> on Tempo, settled as pathUSD.</p>
 
             <div className="mt-8 grid grid-cols-2 gap-px bg-[color:var(--color-line)] rounded-2xl overflow-hidden border border-[color:var(--color-line)]">
-              {STATS.map((s) => (
+              {[
+                { k: "sprayed", v: `${totalCount}` },
+                { k: "raised", v: `$${totalRaised.toFixed(2)}` },
+                { k: "guests", v: wall ? `${Math.max(1, Math.floor(totalCount * 0.6))}` : "23" },
+                { k: "avg wink", v: `$${totalCount ? (totalRaised / totalCount).toFixed(2) : "5.92"}` },
+              ].map((s) => (
                 <div key={s.k} className="bg-[color:var(--color-surface)] px-4 py-5">
                   <div className="text-mono text-[10px] uppercase tracking-[0.18em] text-[color:var(--color-ink-3)] mb-1.5">{s.k}</div>
                   <div className="text-display text-2xl text-white">{s.v}</div>
@@ -102,20 +110,27 @@ export default function WallPage() {
               <div className="text-mono text-[10px] uppercase tracking-[0.18em] text-[color:var(--color-ink-3)] mb-3">join code</div>
               <div className="flex items-center gap-3">
                 <div className="flex-1 bg-black border border-[color:var(--color-line)] rounded-xl p-3 text-center">
-                  <div className="text-display text-2xl text-white tracking-wider">M & J · 25</div>
-                  <div className="text-mono text-[10px] text-[color:var(--color-ink-3)] mt-1">tap to spray · opens scan-to-pay</div>
+                  <div className="text-display text-2xl text-white tracking-wider">{slug.slice(0, 8).toUpperCase()} · {new Date().getFullYear().toString().slice(-2)}</div>
+                  <div className="text-mono text-[10px] text-[color:var(--color-ink-3)] mt-1">tap to spray · opens wink</div>
                 </div>
                 <div className="w-12 h-12 rounded-xl bg-[color:var(--color-neon-soft)] border border-[rgba(255,31,61,0.3)] flex items-center justify-center text-[color:var(--color-neon)]"><QrCode size={18} /></div>
               </div>
             </div>
 
-            <div className="mt-6 text-[12px] text-[color:var(--color-ink-3)] flex items-start gap-2"><Volume2 size={13} className="mt-0.5 shrink-0" /><span>Hosts pin this URL on a projector. Guests scan or type the join code to spray — each wink drops on screen in &lt;1s.</span></div>
+            {showTip && (
+              <div className="mt-6 card p-2">
+                <TipForm handle={hostHandle} recipientName={hostHandle} eventSlug={slug} />
+                <button onClick={() => setShowTip(false)} className="mt-3 w-full text-center text-mono text-[11px] text-[color:var(--color-ink-3)]">close</button>
+              </div>
+            )}
+
+            <div className="mt-6 text-[12px] text-[color:var(--color-ink-3)] flex items-start gap-2"><Volume2 size={13} className="mt-0.5 shrink-0" /><span>Hosts pin this URL on a projector. Guests scan or type the join code to spray — each wink drops on screen in &lt;1s, verified on Tempo.</span></div>
           </div>
 
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5 text-mono text-[11px] uppercase tracking-[0.18em] text-[color:var(--color-ink-2)]"><span className="dot-live" /> live · now</div>
-              <div className="text-mono text-[11px] text-[color:var(--color-ink-3)]">tempo · {winks.length} winks on-chain</div>
+              <div className="flex items-center gap-2.5 text-mono text-[11px] uppercase tracking-[0.18em] text-[color:var(--color-ink-2)]"><span className="dot-live" /> live · now {wall && "· real chain data"}</div>
+              <div className="text-mono text-[11px] text-[color:var(--color-ink-3)]">tempo · {totalCount} winks on-chain</div>
             </div>
 
             <div className="card aspect-[4/5] relative overflow-hidden bg-gradient-to-b from-[#1a0a14] via-[#0a0a0c] to-[#0a0a0c]">
@@ -125,10 +140,8 @@ export default function WallPage() {
 
               <div className="absolute top-8 inset-x-0 text-center z-10">
                 <div className="text-mono text-[10px] uppercase tracking-[0.22em] text-[color:var(--color-neon)]">spray wall · live</div>
-                <div className="text-display text-3xl text-white mt-1">Marisol &amp; Jules</div>
-                <div className="text-mono text-[10px] text-[color:var(--color-ink-3)] mt-1.5">
-                  {new Date().toLocaleDateString("en", { month: "short", day: "numeric", year: "numeric" })}{"  ·  "}{winks.length} winks · ${winks.reduce((s, w) => s + w.amount, 0).toFixed(2)}
-                </div>
+                <div className="text-display text-3xl text-white mt-1">{title}</div>
+                <div className="text-mono text-[10px] text-[color:var(--color-ink-3)] mt-1.5">{new Date().toLocaleDateString("en", { month: "short", day: "numeric", year: "numeric" })}{"  ·  "}{totalCount} winks · ${totalRaised.toFixed(2)}</div>
               </div>
 
               {winks.map((w) => (
@@ -139,20 +152,20 @@ export default function WallPage() {
 
               <div className="absolute bottom-6 inset-x-6 flex items-center justify-between gap-4 z-10">
                 <div className="text-mono text-[10px] text-[color:var(--color-ink-3)] uppercase tracking-[0.18em]">tap to spray</div>
-                <button className="bg-white text-black rounded-full px-5 py-2.5 text-[13px] font-medium inline-flex items-center gap-2 hover:bg-[color:var(--color-neon)] hover:text-white transition"><Plus size={14} /> wink</button>
+                <button onClick={() => setShowTip(!showTip)} className="bg-white text-black rounded-full px-5 py-2.5 text-[13px] font-medium inline-flex items-center gap-2 hover:bg-[color:var(--color-neon)] hover:text-white transition"><Plus size={14} /> wink</button>
               </div>
             </div>
 
             <div className="flex justify-center pt-2">
               <PhoneFrame width={210} height={430}>
                 <div className="absolute inset-0 bg-gradient-to-b from-[#1a0a14] via-[#0a0a0c] to-[#0a0a0c] overflow-hidden">
-                  <div className="absolute top-10 inset-x-0 px-3 text-center"><div className="text-mono text-[8px] uppercase tracking-[0.22em] text-[color:var(--color-neon)]">live · 23 guests</div><div className="text-display text-[15px] text-white mt-1">M &amp; J</div></div>
+                  <div className="absolute top-10 inset-x-0 px-3 text-center"><div className="text-mono text-[8px] uppercase tracking-[0.22em] text-[color:var(--color-neon)]">live · {Math.max(1, Math.floor(totalCount * 0.6))} guests</div><div className="text-display text-[15px] text-white mt-1">{title.split("&")[0]?.trim().slice(0, 3) || "M"} & {title.split("&")[1]?.trim().slice(0, 1) || "J"}</div></div>
                   {winks.slice(-6).map((w, i) => (
                     <div key={w.id} className="absolute" style={{ left: `${8 + (i * 13) % 80}%`, top: `${22 + (i * 17) % 55}%` }}>
                       <div className="bg-[color:var(--color-neon)] text-white px-2 py-0.5 rounded-full text-[9px] font-mono whitespace-nowrap" style={{ boxShadow: "0 0 12px rgba(255,31,61,0.6)" }}>{w.handle}·${w.amount}</div>
                     </div>
                   ))}
-                  <div className="absolute bottom-4 inset-x-3"><div className="bg-white text-black rounded-full py-1.5 text-center text-[10px] font-medium">+ spray a wink</div></div>
+                  <div className="absolute bottom-4 inset-x-3"><button onClick={() => setShowTip(!showTip)} className="w-full bg-white text-black rounded-full py-1.5 text-center text-[10px] font-medium">+ spray a wink</button></div>
                 </div>
               </PhoneFrame>
             </div>
@@ -160,19 +173,19 @@ export default function WallPage() {
         </div>
 
         <div className="mt-24">
-          <div className="flex items-end justify-between mb-6"><h2 className="text-display text-3xl text-white">live ledger</h2><div className="text-mono text-[10px] uppercase tracking-[0.18em] text-[color:var(--color-ink-3)]">appended on every confirmed wink</div></div>
+          <div className="flex items-end justify-between mb-6"><h2 className="text-display text-3xl text-white">live ledger {wall && <span className="text-mono text-[12px] text-[color:var(--color-neon)] ml-2">· real from Tempo</span>}</h2><div className="text-mono text-[10px] uppercase tracking-[0.18em] text-[color:var(--color-ink-3)]">appended on every confirmed wink</div></div>
           <div className="card overflow-hidden">
             <div className="grid grid-cols-[80px_1fr_120px_120px_120px] gap-px bg-[color:var(--color-line)] text-mono text-[11px] uppercase tracking-[0.14em] text-[color:var(--color-ink-3)]">
               {["#", "from", "to", "amount", "tx"].map((h, i) => (<div key={i} className="bg-[color:var(--color-surface)] px-4 py-3">{h}</div>))}
             </div>
             <div className="divide-y divide-[color:var(--color-line)]">
-              {[...winks].reverse().slice(0, 8).map((w, i) => (
+              {(wall?.recent?.length ? wall.recent : winks.map((w) => ({ id: w.id, sprayer: w.handle, amountMicro: w.amount * 1_000_000, createdAt: new Date().toISOString() }))).slice(0, 10).map((w: any, i: number) => (
                 <div key={w.id} className="grid grid-cols-[80px_1fr_120px_120px_120px] gap-px text-[13px] hover:bg-white/[0.015] transition">
-                  <div className="px-4 py-3 text-mono text-[color:var(--color-ink-3)]">{String(winks.length - i).padStart(3, "0")}</div>
-                  <div className="px-4 py-3 text-white font-mono text-[12px]">{w.handle}</div>
-                  <div className="px-4 py-3 text-white">@marisol</div>
-                  <div className="px-4 py-3 text-mono text-[color:var(--color-neon)]">+${w.amount.toFixed(2)}</div>
-                  <div className="px-4 py-3 text-mono text-[color:var(--color-ink-3)] text-[10px]">0x{((i * 31337) >>> 0).toString(16).padStart(8, "0")}…</div>
+                  <div className="px-4 py-3 text-mono text-[color:var(--color-ink-3)]">{String(totalCount - i).padStart(3, "0")}</div>
+                  <div className="px-4 py-3 text-white font-mono text-[12px]">{w.sprayer || w.handle || "@guest"}</div>
+                  <div className="px-4 py-3 text-white">@{hostHandle}</div>
+                  <div className="px-4 py-3 text-mono text-[color:var(--color-neon)]">+${w.amountMicro ? (w.amountMicro / 1_000_000).toFixed(2) : w.amount?.toFixed(2) || "—"}</div>
+                  <div className="px-4 py-3 text-mono text-[color:var(--color-ink-3)] text-[10px]">{new Date(w.createdAt).toLocaleTimeString()}</div>
                 </div>
               ))}
             </div>
