@@ -3,6 +3,7 @@ import {
   sourceChain,
   SOURCE_CHAINS,
   TEMPO_CHAIN_ID,
+  TEMPO_PATH_USD,
   TEMPO_USDC_E,
   BRIDGE_MIN_MICRO,
   BRIDGE_MAX_MICRO,
@@ -29,16 +30,20 @@ describe("sourceChain registry", () => {
 });
 
 describe("doctrine guardrails", () => {
-  it("enforces the $5 cross-chain minimum", () => {
-    expect(BRIDGE_MIN_MICRO).toBe(5_000_000);
+  it("enforces the $1 cross-chain minimum for live test (raise to $5 at launch)", () => {
+    expect(BRIDGE_MIN_MICRO).toBe(1_000_000);
   });
 
   it("enforces the $500 per-transfer cap", () => {
     expect(BRIDGE_MAX_MICRO).toBe(500_000_000);
   });
 
-  it("delivers to Tempo mainnet as USDC.e", () => {
+  it("delivers to Tempo mainnet as pathUSD (doctrine: any chain in -> pathUSD out)", () => {
     expect(TEMPO_CHAIN_ID).toBe(4217);
+    expect(TEMPO_PATH_USD.toLowerCase()).toBe(
+      "0x20c0000000000000000000000000000000000000",
+    );
+    // USDC.e still supported as legacy arrival token
     expect(TEMPO_USDC_E.toLowerCase()).toBe(
       "0x20c000000000000000000000b9537d11c60e8b50",
     );
