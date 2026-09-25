@@ -29,9 +29,9 @@ export async function DELETE() {
   if (!db) return NextResponse.json({ error: "db-not-configured" }, { status: 503 });
   if (!userId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  const res = await db
+  const res = await (db as any)
     .delete(telegramLinks)
     .where(eq(telegramLinks.userId, userId))
-    .returning({ id: telegramLinks.id });
+    .returning();
   return NextResponse.json({ ok: true, unlinked: res.length > 0 });
 }

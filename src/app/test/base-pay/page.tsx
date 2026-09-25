@@ -7,12 +7,6 @@ import { BgFx } from "@/components/BgFx";
 const BASE_CHAIN_ID = 8453;
 const BASE_HEX = "0x2105";
 
-declare global {
-  interface Window {
-    ethereum?: any;
-  }
-}
-
 export default function BasePayTestPage() {
   const [handle, setHandle] = useState("demo");
   const [amount, setAmount] = useState("1");
@@ -25,19 +19,20 @@ export default function BasePayTestPage() {
   const connect = async () => {
     setError(null);
     try {
-      if (!window.ethereum) throw new Error("No MetaMask found");
-      const accounts = (await window.ethereum.request({ method: "eth_requestAccounts" })) as string[];
+      const eth = (window as any).ethereum;
+      if (!eth) throw new Error("No MetaMask found");
+      const accounts = (await eth.request({ method: "eth_requestAccounts" })) as string[];
       const addr = accounts[0];
       setSender(addr);
       // switch to Base
       try {
-        await window.ethereum.request({
+        await eth.request({
           method: "wallet_switchEthereumChain",
           params: [{ chainId: BASE_HEX }],
         });
       } catch (e: any) {
         if (e.code === 4902) {
-          await window.ethereum.request({
+          await eth.request({
             method: "wallet_addEthereumChain",
             params: [{ chainId: BASE_HEX, chainName: "Base", nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 }, rpcUrls: ["https://mainnet.base.org"], blockExplorerUrls: ["https://basescan.org"] }],
           });
@@ -80,12 +75,13 @@ export default function BasePayTestPage() {
     setError(null);
     setStatus("Signing on Base via MetaMask...");
     try {
+      const eth = (window as any).ethereum;
       const hashes: string[] = [];
       for (const step of quote.steps) {
         for (const item of step.items) {
           const d = item.data as any;
           if (!d?.to) continue;
-          const hash = await window.ethereum.request({
+          const hash = await eth.request({
             method: "eth_sendTransaction",
             params: [{ from: sender, to: d.to, data: d.data, value: d.value || "0x0" }],
           });

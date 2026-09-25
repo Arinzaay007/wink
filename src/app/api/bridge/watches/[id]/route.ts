@@ -14,10 +14,10 @@ export async function DELETE(_req: Request, ctx: { params: Promise<{ id: string 
   if (!userId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const { id } = await ctx.params;
-  const deleted = await db
+  const deleted = await (db as any)
     .delete(bridgeWatches)
     .where(and(eq(bridgeWatches.id, id), eq(bridgeWatches.userId, userId)))
-    .returning({ id: bridgeWatches.id });
+    .returning();
   if (deleted.length === 0)
     return NextResponse.json({ error: "not-found" }, { status: 404 });
   return NextResponse.json({ ok: true });

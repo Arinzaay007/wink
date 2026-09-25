@@ -118,10 +118,10 @@ export function createBot(token: string): Bot {
   bot.command("unlink", async (ctx) => {
     const db = requireDb(ctx);
     if (!db) return;
-    const res = await db
+    const res = await (db as any)
       .delete(telegramLinks)
       .where(eq(telegramLinks.chatId, String(ctx.chat.id)))
-      .returning({ id: telegramLinks.id });
+      .returning();
     await ctx.reply(
       res.length > 0
         ? "Unlinked. No more wink notifications here. /link a code anytime to come back."
