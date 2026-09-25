@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { ArrowLeft, ArrowRight, Check, Sparkles, AtSign, Mail, ShieldCheck } from "lucide-react";
 import { BgFx } from "@/components/BgFx";
 import { normalizeHandle, HANDLE_RE } from "@/lib/handles";
+import { createDemoWallet, loadDemoWallet } from "@/lib/demoWallet";
 
 type Status = "idle" | "checking" | "available" | "taken" | "invalid";
 
@@ -80,6 +81,16 @@ export default function ClaimPage() {
         const msg = claimData.error === "handle-taken" ? "That handle was just taken — try another!" : claimData.error === "handle-reserved" ? "That handle is reserved." : (claimData.error ?? "could not claim");
         throw new Error(msg);
       }
+      // auto-generate wallet on account creation — one click, receivable everywhere
+      try {
+        let w = loadDemoWallet();
+        if (!w) w = createDemoWallet();
+        await fetch("/api/wallet/link", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ address: w.address, kind: "inapp", label: "primary" }),
+        });
+      } catch {}
       setClaimed(claimData.handle);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -89,16 +100,25 @@ export default function ClaimPage() {
   };
 
   if (claimed) {
+    const w = typeof window !== "undefined" ? loadDemoWallet() : null;
     return (
       <div className="relative">
         <BgFx />
         <div className="max-w-[1200px] mx-auto px-5 md:px-8 py-24 text-center">
           <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring" }} className="mx-auto w-20 h-20 rounded-full bg-[color:var(--color-neon)] flex items-center justify-center neon-glow text-4xl">😉</motion.div>
           <h1 className="mt-8 text-display text-[56px] leading-[0.95] tracking-[-0.04em]"><span className="text-white">@{claimed} is</span> <em className="italic font-light neon-text">yours</em><span className="text-[color:var(--color-neon)]">.</span></h1>
-          <p className="mt-4 text-[color:var(--color-ink-2)] max-w-md mx-auto">Your pay page is live. Share it, print it as a QR, get winked.</p>
+          <p className="mt-4 text-[color:var(--color-ink-2)] max-w-md mx-auto">Your pay page is live + wallet auto-created. Same address on Base, Eth, Arb, Op, Poly, Tempo — anyone can send you USDC on any chain, you get pathUSD on Tempo.</p>
+          {w && (
+            <div className="mt-6 inline-flex flex-col items-center gap-2 card p-4 max-w-lg mx-auto">
+              <div className="text-mono text-[10px] uppercase tracking-[0.18em] text-[color:var(--color-ink-3)]">your wallet · auto-generated · non-custodial</div>
+              <div className="font-mono text-[13px] text-white break-all">{w.address}</div>
+              <div className="text-[11px] text-[color:var(--color-ink-2)]">Same on every chain · send Base USDC here → auto-forwards to pathUSD</div>
+            </div>
+          )}
           <div className="mt-10 flex items-center justify-center gap-3">
             <button onClick={() => router.push(`/wink/${claimed}`)} className="btn-primary !px-7 !py-4">See my page <ArrowRight size={16} /></button>
-            <button onClick={() => router.push("/dashboard")} className="btn-ghost !px-7 !py-4">Open dashboard</button>
+            <button onClick={() => router.push("/wallet")} className="btn-ghost !px-7 !py-4">Open wallet</button>
+            <button onClick={() => router.push("/dashboard")} className="btn-ghost !px-7 !py-4">Dashboard</button>
           </div>
         </div>
       </div>
