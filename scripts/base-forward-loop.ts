@@ -36,10 +36,10 @@ const receiver = (tempoReceiver ?? account.address) as Address;
 
 console.log(`🔄 Multi-chain auto-forwarder started`);
 console.log(`   Source wallet (same on all EVMs): ${account.address}`);
-console.log(`   Sponsor wallet (pays gas, keeps $0.05 fee): ${sponsorAccount.address} — self-sustaining Option A`);
+console.log(`   Sponsor wallet (pays gas, keeps friendly 1% min $0.01 max $0.10 fee): ${sponsorAccount.address} — self-sustaining Option A`);
 console.log(`   Tempo receiver: ${receiver}`);
 console.log(`   Watching: Base, Ethereum, Arbitrum, Optimism, Polygon USDC -> Tempo pathUSD`);
-console.log(`   Mode: direct forward if ETH > 0.0001, else gasless via permit (receiver 0 ETH ok)`);
+console.log(`   Mode: direct forward if ETH > 0.0001, else gasless via permit (receiver 0 ETH ok, fee friendly)`);
 
 const db = (() => {
   try { return getDb(); } catch { return undefined; }
