@@ -1,14 +1,12 @@
 /**
- * Database connection — Neon serverless (production) or postgres.js (local).
- * Works on Vercel serverless (no native pg-native needed).
+ * Database connection — postgres.js for both Neon and local.
+ * Works on Vercel serverless, no native pg-native.
  */
-import { drizzle as drizzleNeon, type NeonHttpDatabase } from "drizzle-orm/neon-http";
-import { drizzle as drizzlePg, type PostgresJsDatabase } from "drizzle-orm/postgres-js";
-import { neon } from "@neondatabase/serverless";
+import { drizzle, type PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import * as schema from "./schema";
 
-export type WinkDb = NeonHttpDatabase<typeof schema> | PostgresJsDatabase<typeof schema>;
+export type WinkDb = PostgresJsDatabase<typeof schema>;
 
 let _db: WinkDb | null = null;
 let _failed = false;
@@ -18,15 +16,8 @@ export function getDb(): WinkDb | null {
   if (!url || _failed) return _db;
   if (!_db) {
     try {
-      if (url.includes("neon.tech") || url.includes("neondb")) {
-        // Neon serverless — works on Vercel, no native deps
-        const client = neon(url);
-        _db = drizzleNeon(client, { schema });
-      } else {
-        // Local postgres via postgres.js
-        const client = postgres(url, { max: 4, idle_timeout: 20 });
-        _db = drizzlePg(client, { schema });
-      }
+      const client = postgres(url, { max: 4, idle_timeout: 20, ssl: url.includes("neon.tech") || url.includes("sslmode=require") ? "require" : false });
+      _db = drizzle(client, { schema });
     } catch {
       _failed = true;
       return null;
