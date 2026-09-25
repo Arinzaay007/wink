@@ -328,6 +328,26 @@ export const bridgeWatchStatusEnum = pgEnum("bridge_watch_status", [
 ]);
 
 /**
+ * Waitlist — pre-launch early access.
+ * One row per email, optional handle preference, chain interest, referral.
+ */
+export const waitlist = pgTable(
+  "waitlist",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    email: text("email").notNull(),
+    handle: text("handle"), // desired @handle
+    chain: text("chain").notNull().default("base"), // base | ethereum | arbitrum | etc
+    source: text("source"), // twitter | friend | etc
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => ({
+    emailUq: uniqueIndex("waitlist_email_uq").on(t.email),
+    handleIdx: index("waitlist_handle_idx").on(t.handle),
+  })
+);
+
+/**
  * Cross-chain transfer watcher — "any chain in, Tempo out" tracking.
  * A watch is created when a bridge transfer starts (via our quote, or
  * tracked manually for a transfer executed on relay.link itself).
@@ -371,3 +391,4 @@ export type Wallet = typeof wallets.$inferSelect;
 export type Transfer = typeof transfers.$inferSelect;
 export type TelegramLink = typeof telegramLinks.$inferSelect;
 export type BridgeWatch = typeof bridgeWatches.$inferSelect;
+export type WaitlistEntry = typeof waitlist.$inferSelect;

@@ -119,11 +119,11 @@ export default function Home() {
                 transition={{ duration: 0.5, delay: 0.25 }}
                 className="mt-9 flex flex-wrap items-center gap-3"
               >
-                <Link href="/wink/demo" className="btn-primary">
-                  Get a @handle <ArrowRight size={16} />
+                <Link href="/waitlist" className="btn-primary">
+                  Join waitlist — reserve @handle <ArrowRight size={16} />
                 </Link>
-                <Link href="/wall/wedding" className="btn-ghost">
-                  <Play size={14} /> Watch the spray wall
+                <Link href="/wink/demo" className="btn-ghost">
+                  <Play size={14} /> Try demo
                 </Link>
                 <a
                   href="https://github.com/Arinzaay007/wink"
@@ -486,11 +486,14 @@ export default function Home() {
             settled as pathUSD.
           </p>
           <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
-            <Link href="/claim" className="btn-primary !px-7 !py-4 !text-base">
-              Claim your @handle <ArrowRight size={18} />
+            <Link href="/waitlist" className="btn-primary !px-7 !py-4 !text-base">
+              Join waitlist <ArrowRight size={18} />
+            </Link>
+            <Link href="/claim" className="btn-ghost !px-7 !py-4 !text-base">
+              Claim @handle now
             </Link>
             <Link href="/docs" className="btn-ghost !px-7 !py-4 !text-base">
-              Read the protocol
+              Read protocol
             </Link>
           </div>
           <div className="mt-14 inline-flex items-center gap-4 text-mono text-xs text-[color:var(--color-ink-3)]">
