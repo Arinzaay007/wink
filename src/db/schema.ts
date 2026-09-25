@@ -192,9 +192,7 @@ export const transfers = pgTable(
     kind: text("kind").notNull().default("wink"), // wink | sale | wage
     fromUserId: text("from_user_id").references(() => users.id), // null = guest
     fromAddress: text("from_address").notNull(),
-    toUserId: text("to_user_id")
-      .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
+    toUserId: text("to_user_id").references(() => users.id, { onDelete: "cascade" }), // null = external 0x address (non-wink user)
     toAddress: text("to_address").notNull(),
     // multichain-ready: origin chain of the incoming asset
     chain: text("chain").notNull().default("tempo"),

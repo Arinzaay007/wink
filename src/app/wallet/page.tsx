@@ -2,9 +2,10 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Wallet, ArrowRight, RefreshCw, Globe2, Zap, ShieldCheck, Activity, Eye, EyeOff, Copy, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Wallet, ArrowRight, RefreshCw, Globe2, Zap, ShieldCheck, Activity, Eye, EyeOff, Copy, AlertTriangle, Send } from "lucide-react";
 import { BgFx } from "@/components/BgFx";
-import { loadDemoWallet, fetchBalance } from "@/lib/demoWallet";
+import { loadDemoWallet, fetchBalance, sendWink } from "@/lib/demoWallet";
+import { isAddress } from "viem";
 
 type PortfolioWallet = {
   address: string;
@@ -31,6 +32,15 @@ export default function WalletPage() {
   const [confirmExport, setConfirmExport] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  // send to external 0x address (non-wink user)
+  const [toExternal, setToExternal] = useState("");
+  const [amountExternal, setAmountExternal] = useState("1");
+  const [msgExternal, setMsgExternal] = useState("");
+  const [sending, setSending] = useState(false);
+  const [sendStage, setSendStage] = useState<"idle" | "signing" | "confirming" | "done" | "error">("idle");
+  const [sendError, setSendError] = useState<string | null>(null);
+  const [sendTxHash, setSendTxHash] = useState<string | null>(null);
+
   useEffect(() => {
     const w = loadDemoWallet();
     if (w) {
@@ -55,6 +65,66 @@ export default function WalletPage() {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {}
+  };
+
+  const sendToExternal = async () => {
+    setSendError(null);
+    setSendTxHash(null);
+    try {
+      if (!isAddress(toExternal as any)) throw new Error("Invalid 0x address — must be 0x + 40 hex chars");
+      const amountMicro = Math.round(parseFloat(amountExternal) * 1_000_000);
+      if (!isFinite(amountMicro) || amountMicro < 100_000) throw new Error("Minimum $0.10");
+      const w = loadDemoWallet();
+      if (!w) throw new Error("No wallet — claim a handle first");
+      const bal = await fetchBalance(w.address as any);
+      if (bal * 1_000_000 < amountMicro) throw new Error(`Insufficient — you have $${bal.toFixed(2)} pathUSD`);
+
+      setSending(true);
+      setSendStage("signing");
+
+      // prepare transfer record for external address
+      const prep = await fetch("/api/send/address", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          toAddress: toExternal,
+          amountMicro,
+          message: msgExternal || undefined,
+          fromAddress: w.address,
+        }),
+      }).then((r) => r.json());
+      if (!prep.transferId) throw new Error(prep.error ?? "prepare failed");
+
+      // sign with demo wallet (pathUSD transferWithMemo)
+      const hash = await sendWink(w, {
+        to: prep.to as any,
+        amountMicro,
+        memoHex: prep.memoHex as any,
+      });
+      setSendTxHash(hash);
+      setSendStage("confirming");
+
+      // confirm on-chain
+      let confirmed = false;
+      for (let i = 0; i < 12 && !confirmed; i++) {
+        await new Promise((r) => setTimeout(r, 1000));
+        const c = await fetch("/api/wink/confirm", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ transferId: prep.transferId, txHash: hash }),
+        }).then((r) => r.json());
+        if (c.status === "confirmed") confirmed = true;
+      }
+      if (!confirmed) throw new Error("Broadcast but not verified yet — check explorer");
+      setSendStage("done");
+      fetchBalance(w.address as any).then((b) => setDemoTempo(b.toFixed(2))).catch(() => {});
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      setSendError(msg);
+      setSendStage("error");
+    } finally {
+      setSending(false);
+    }
   };
 
   const totals = data?.totals;
@@ -193,6 +263,55 @@ export default function WalletPage() {
                 )}
               </div>
             )}
+
+            {/* Send pathUSD to any 0x address — non-wink user */}
+            <div className="card p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="text-mono text-[10px] uppercase tracking-[0.18em] text-[color:var(--color-ink-3)]">send · to any wallet</div>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-[color:var(--color-ink-2)] border border-[color:var(--color-line)]">pathUSD · tempo</span>
+              </div>
+              <h3 className="text-display text-xl text-white leading-tight">Send to normal wallet<span className="text-[color:var(--color-neon)]">.</span></h3>
+              <p className="mt-2 text-[12px] text-[color:var(--color-ink-2)] leading-relaxed">
+                Recipient doesn't need a wink handle. Any <span className="text-white">0x address</span> on Tempo mainnet works. Same private key works on Base/Eth/Arb too — pathUSD settles on Tempo.
+              </p>
+
+              {sendStage === "done" ? (
+                <div className="mt-5 rounded-xl bg-[color:var(--color-neon-soft)] border border-[rgba(255,31,61,0.3)] p-5 text-center">
+                  <div className="text-2xl">😉✨</div>
+                  <div className="mt-2 text-white font-medium">Sent ${amountExternal} pathUSD</div>
+                  <div className="text-[11px] text-[color:var(--color-ink-2)] mt-1 break-all">to {toExternal.slice(0, 10)}…{toExternal.slice(-6)} · tx {sendTxHash?.slice(0, 12)}…</div>
+                  <div className="mt-3 flex gap-2 justify-center">
+                    <a href={`https://explore.tempo.xyz/tx/${sendTxHash}`} target="_blank" className="btn-ghost !py-2 !text-[11px]">View on Tempo ↗</a>
+                    <button onClick={() => { setSendStage("idle"); setSendTxHash(null); setToExternal(""); }} className="btn-ghost !py-2 !text-[11px]">Send again</button>
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-5 space-y-3">
+                  <div>
+                    <div className="text-mono text-[10px] uppercase tracking-[0.16em] text-[color:var(--color-ink-3)] mb-1.5">recipient 0x address (Tempo)</div>
+                    <input value={toExternal} onChange={(e) => setToExternal(e.target.value)} placeholder="0x..." className="input font-mono !text-[13px]" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <div className="text-mono text-[10px] uppercase tracking-[0.16em] text-[color:var(--color-ink-3)] mb-1.5">amount (USD)</div>
+                      <input value={amountExternal} onChange={(e) => setAmountExternal(e.target.value)} type="number" min="0.1" step="0.1" className="input !text-[13px]" />
+                    </div>
+                    <div>
+                      <div className="text-mono text-[10px] uppercase tracking-[0.16em] text-[color:var(--color-ink-3)] mb-1.5">memo (optional)</div>
+                      <input value={msgExternal} onChange={(e) => setMsgExternal(e.target.value)} maxLength={31} placeholder="thanks!" className="input !text-[13px]" />
+                    </div>
+                  </div>
+                  <button onClick={sendToExternal} disabled={sending || !demoAddr} className="btn-primary w-full justify-center !py-3 !text-[13px] disabled:opacity-50">
+                    <Send size={14} /> {sending ? (sendStage === "signing" ? "Signing…" : sendStage === "confirming" ? "Confirming on Tempo…" : "Sending…") : `Send $${amountExternal || "0"} pathUSD`}
+                  </button>
+                  {!demoAddr && <div className="text-[11px] text-[color:var(--color-ink-3)] text-center">Claim a handle to get a wallet first</div>}
+                  {sendError && <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-[11px] text-red-300">{sendError}</div>}
+                  <div className="text-[10px] text-[color:var(--color-ink-3)] leading-relaxed">
+                    Fee: ~$0.008 pathUSD (~8bps). Recipient gets full amount. Verified on-chain before confirmed. Works even if recipient has never used wink.
+                  </div>
+                </div>
+              )}
+            </div>
 
             <div className="card p-6">
               <div className="text-mono text-[10px] uppercase tracking-[0.18em] text-[color:var(--color-ink-3)] mb-3">how auto-forward works</div>
