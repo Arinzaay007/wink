@@ -21,9 +21,37 @@ const mono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://winkpay.xyz"),
   title: "Wink — anyone, anywhere, paid with a wink",
   description:
-    "The name layer for payments. Wink tips, sales and wages to @usernames — settled on Tempo in under a second. All settling as pathUSD.",
+    "The name layer for payments. Pay @usernames — tips, checkout, payroll, and AI agents. All settling as pathUSD on Tempo in under a second.",
+  icons: {
+    icon: "/icon.png",
+    apple: "/icon.png",
+  },
+  openGraph: {
+    title: "Wink — anyone, anywhere, paid with a wink",
+    description:
+      "The name layer for payments. Pay @usernames — tips, checkout, payroll, and AI agents. Settled as pathUSD on Tempo in under a second. 0% platform fee.",
+    url: "https://winkpay.xyz",
+    siteName: "Wink",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Wink — anyone, anywhere, paid with a wink",
+      },
+    ],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Wink — anyone, anywhere, paid with a wink",
+    description:
+      "Pay @usernames — tips, checkout, payroll, and AI agents. Settled as pathUSD on Tempo. 0% platform fee.",
+    images: ["/og-image.png"],
+  },
 };
 
 export default function RootLayout({
