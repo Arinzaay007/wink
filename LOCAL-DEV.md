@@ -48,7 +48,7 @@ npm run dev            # app on http://localhost:3000
 Key screens:
 - `/` — landing (live proof strip)
 - `/claim` — claim a handle / sign in (dev mode: instant code)
-- `/dashboard` — money-in feed, pay codes, pay requests, payroll, Telegram card
+- `/dashboard` — money-in feed, pay codes, pay requests, payroll
 - `/wall/adaeze-arinzaay-s-wedding-ggdny5` — the spray wall
 - `/payroll` — batch payouts
 - `/agents` — MPP (machine payments) demo

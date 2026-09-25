@@ -14,7 +14,7 @@ const SECTIONS: { title: string; body: string[] }[] = [
     body: [
       "Account data: your handle, display name, optional avatar, and the email you sign in with.",
       "Ledger data: transfers you send or receive — amount, memo/message, timestamp, status, and the on-chain transaction hash.",
-      "Integrations: if you link Telegram, we store the link code that ties your handle to your chat. Nothing else from Telegram.",
+      "Notifications: we send payment alerts to your email. You can opt out from your dashboard.",
       "Session data: a signed session cookie so you stay signed in. No fingerprinting, no third-party analytics.",
     ],
   },

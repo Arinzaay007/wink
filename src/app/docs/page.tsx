@@ -99,7 +99,7 @@ export default function DocsPage() {
 git clone https://github.com/Arinzaay007/wink
 cd wink && npm install
 
-# env (DATABASE_URL, SESSION_SECRET, TEMPO_NETWORK=mainnet)
+# env (DATABASE_URL, SESSION_SECRET, TEMPO_NETWORK=mainnet, RESEND_API_KEY)
 cp .env.example .env
 
 # schema → postgres
@@ -109,8 +109,7 @@ npm run db:push
 npm run dev                          # app on :3000
 npm test                             # 60 automated tests
 npm run rebuild                      # restore the whole demo world
-npm run reconcile                    # safety net for stranded transfers
-npm run bot                          # optional: telegram "you've been winked 😉"`}
+npm run reconcile                    # safety net for stranded transfers`}
             </pre>
           </div>
         </section>

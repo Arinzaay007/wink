@@ -29,7 +29,7 @@ export default function RequestPage() {
             <div className="mt-12 space-y-3">
               {[
                 { t: "Request created", sub: `@${handle} · for: hours Oct 1–14`, d: "2 min ago", done: true },
-                { t: "Notification sent", sub: "telegram · email · webhook", d: "1 min ago", done: true },
+                { t: "Notification sent", sub: "email · dashboard", d: "1 min ago", done: true },
                 { t: "Awaiting approval", sub: "approver: @studio-9", d: "now", active: true },
                 { t: "On-chain confirmation", sub: "memo: wk_req_a31b · 1 conf", d: "—" },
               ].map((s, i) => (

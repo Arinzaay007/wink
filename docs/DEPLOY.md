@@ -9,9 +9,7 @@ public host and ship.
 
 1. ~~**Neon project**~~ ✅ done — project in `eu-west-2`, db `wink`,
    role `neondb_owner`. Password via Neon console → Roles.
-2. **A public host** — see the driver warning below before choosing.
-3. Later, for the Telegram bot in production: a small VPS or Railway
-   service (long-polling bot can't live in serverless).
+2. **A public host** — Vercel prod (winkpay.xyz) live, Tempo mainnet.
 
 ## ⚠ Driver constraint (read before picking a host)
 
@@ -81,33 +79,28 @@ Environment variables:
 
 | Variable | Value | Notes |
 | --- | --- | --- |
-| `DATABASE_URL` | Neon pooled string | required — already in sandbox .env |
-| `SESSION_SECRET` | fresh 32+ char random | **not** the dev one |
-| `TEMPO_NETWORK` | `testnet` | stays testnet until §9C gates pass |
-| `NEXT_PUBLIC_APP_URL` | the public URL | used by the Telegram bot |
-| `TEMPO_SPONSOR_KEY` | *(leave empty for now)* | mainnet gate only |
-| `TELEGRAM_BOT_TOKEN` | from @BotFather | only on the bot host |
+| `DATABASE_URL` | Neon pooled string | required |
+| `SESSION_SECRET` | fresh 32+ char random | not dev one |
+| `TEMPO_NETWORK` | `mainnet` | live on Tempo mainnet |
+| `NEXT_PUBLIC_APP_URL` | `https://winkpay.xyz` | public URL |
+| `RESEND_API_KEY` | from Resend | email OTP + notifications |
+| `WINK_MAIL_FROM` | `Wink <noreply@winkpay.xyz>` | sender |
 
 ## 3. Smoke test the public URL (10 minutes)
 
-Run the three journeys exactly as a stranger would (fresh browser, no
-cookies — this doubles as the video rehearsal):
-
 - [ ] `/` loads; proof strip shows totals + latest tx link
-- [ ] Claim a throwaway handle via email OTP flow *(OTP gate: until the
-      email provider is wired, use the dev bypass if enabled)*
-- [ ] Fund demo wallet from faucet; wink the throwaway $1; explorer link works
-- [ ] Wall poll shows the wink within one poll cycle
-- [ ] Pay code created → QR renders → paid from a second browser
-- [ ] Payroll paste-list validates and rejects a bad handle client-side
-- [ ] `/agents` shows the MPP receipt row
-- [ ] `GET /api/telegram` returns 401 unauthenticated
+- [ ] Claim handle via email OTP flow
+- [ ] Fund demo wallet from faucet; wink throwaway $1; explorer link works
+- [ ] Wall poll shows wink within one poll cycle
+- [ ] Pay code created → QR renders → paid from second browser
+- [ ] Payroll paste-list validates and rejects bad handle client-side
+- [ ] `/agents` shows MPP receipt row
+- [ ] `/wallet` shows export private key with warning
 
-## 4. Telegram bot in production (optional, ~5 minutes)
+## 4. Notifications — email only (Telegram removed)
 
-On the bot host: clone repo → `npm ci` → `.env` with `DATABASE_URL` (Neon),
-`TELEGRAM_BOT_TOKEN`, `NEXT_PUBLIC_APP_URL` → `npm run bot` under a process
-manager (`pm2 start "npm run bot" --name wink-bot`).
+All notifications via Resend email. No Telegram bot needed.
+`WINK_MAIL_FROM` + `RESEND_API_KEY` required for prod.
 
 ## 5. After cutover
 
