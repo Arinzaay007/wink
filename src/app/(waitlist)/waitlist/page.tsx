@@ -140,7 +140,7 @@ export default function WaitlistPage() {
             </motion.div>
 
             <div className="mt-4 text-center text-mono text-[10px] text-[color:var(--color-ink-3)]">
-              waitlist.winkpay.xyz · isolated · no login required · main app at winkpay.xyz
+              waitlist.winkpay.xyz · invite-only · email only · no login required
             </div>
           </div>
         </div>
