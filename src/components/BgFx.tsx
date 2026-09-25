@@ -1,7 +1,6 @@
 "use client";
 /**
- * Atmospheric background — from wink-design 2015ca5
- * Noise grid + corner glows
+ * Atmospheric background — noise grid + corner glows
  */
 export function BgFx({ variant = "default" }: { variant?: "default" | "tight" | "raw" }) {
   const cls = variant === "tight" ? "bg-grid" : variant === "raw" ? "bg-noise" : "bg-noise";

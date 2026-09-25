@@ -5,7 +5,6 @@ import React from "react";
  * Left eye: filled dot (open)
  * Right eye: curved arc (the wink)
  * Plus a rounded smile
- * From wink-design 2015ca5
  */
 export function WinkLogo({
   size = 40,

@@ -2,7 +2,7 @@ import type { Config } from "tailwindcss";
 
 /**
  * Wink design system — Crimson / Black Neon
- * From wink-design 2015ca5: bg #050505, neon #ff1f3d, Bricolage + Geist
+ * bg #050505, neon #ff1f3d, Bricolage + Geist
  */
 const config: Config = {
   content: ["./src/**/*.{ts,tsx}"],
