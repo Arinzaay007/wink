@@ -1,9 +1,6 @@
 /**
  * Sessions — HMAC-signed cookie tokens (stateless).
- *
- * HACKATHON NOTE: auth is email-only (no password) so the demo is
- * frictionless. Post-hackathon this becomes email OTP / passkeys;
- * the token format and cookie handling stay identical.
+ * Email OTP auth — frictionless, no password.
  */
 import { createHmac, timingSafeEqual } from "crypto";
 import { cookies } from "next/headers";

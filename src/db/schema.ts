@@ -22,7 +22,7 @@ const id = () => nanoid(16);
 
 // ── enums ────────────────────────────────────────────────────────────
 export const walletKindEnum = pgEnum("wallet_kind", [
-  "inapp", // browser demo wallet (hackathon) → embedded provider later
+  "inapp", // browser self-custody wallet
   "connected", // user connected their own wallet
   "external", // user pasted an address they control elsewhere
 ]);
@@ -53,7 +53,6 @@ export const users = pgTable("users", {
   email: text("email").notNull().unique(),
   displayName: text("display_name"),
   avatarUrl: text("avatar_url"),
-  // Privacy L1 — social layer controls
   privacyAmountsPublic: boolean("privacy_amounts_public")
     .notNull()
     .default(true),
@@ -208,10 +207,6 @@ export const transfers = pgTable(
       .default("named"),
     txHash: text("tx_hash"),
     status: transferStatusEnum("status").notNull().default("pending"),
-    // ── private settlement via Tempo Zones (testnet preview) ─────────
-    // "public" = settled on Tempo L1, visible in the explorer.
-    // "zone"   = deposited into a Zone; the L1 deposit tx is visible, but
-    //            the credit to the recipient is private (zone tx below).
     settlement: text("settlement").notNull().default("public"),
     zoneId: bigint("zone_id", { mode: "number" }),
     zoneTxHash: text("zone_tx_hash"),
@@ -328,26 +323,6 @@ export const bridgeWatchStatusEnum = pgEnum("bridge_watch_status", [
 ]);
 
 /**
- * Waitlist — pre-launch early access.
- * One row per email, optional handle preference, chain interest, referral.
- */
-export const waitlist = pgTable(
-  "waitlist",
-  {
-    id: text("id").primaryKey().$defaultFn(id),
-    email: text("email").notNull(),
-    handle: text("handle"), // desired @handle
-    chain: text("chain").notNull().default("base"), // base | ethereum | arbitrum | etc
-    source: text("source"), // twitter | friend | etc
-    createdAt: timestamp("created_at").notNull().defaultNow(),
-  },
-  (t) => ({
-    emailUq: uniqueIndex("waitlist_email_uq").on(t.email),
-    handleIdx: index("waitlist_handle_idx").on(t.handle),
-  })
-);
-
-/**
  * Cross-chain transfer watcher — "any chain in, Tempo out" tracking.
  * A watch is created when a bridge transfer starts (via our quote, or
  * tracked manually for a transfer executed on relay.link itself).
@@ -391,4 +366,3 @@ export type Wallet = typeof wallets.$inferSelect;
 export type Transfer = typeof transfers.$inferSelect;
 export type TelegramLink = typeof telegramLinks.$inferSelect;
 export type BridgeWatch = typeof bridgeWatches.$inferSelect;
-export type WaitlistEntry = typeof waitlist.$inferSelect;

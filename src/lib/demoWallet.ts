@@ -1,13 +1,10 @@
 "use client";
 /**
- * In-app demo wallet (hackathon custody model).
+ * In-app self-custody wallet.
  *
- * A throwaway keypair is generated IN THE BROWSER and kept in
- * localStorage — zero-setup for demo users, and no private key ever
+ * A keypair is generated IN THE BROWSER and kept in
+ * localStorage — zero-setup, and no private key ever
  * touches our servers (non-custodial by construction).
- *
- * Post-hackathon upgrade path: swap this module for an embedded-wallet
- * provider (Privy-style) — same interface, real key management.
  */
 import { createWalletClient, createPublicClient, http, type Address } from "viem";
 import { privateKeyToAccount, generatePrivateKey } from "viem/accounts";

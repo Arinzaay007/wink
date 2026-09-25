@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { WinkLogo } from "./Logo";
-import { Github, Twitter, Send } from "lucide-react";
+import { Twitter, Send } from "lucide-react";
 
 function FooterCol({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -42,7 +42,6 @@ export function Footer() {
             </p>
             <div className="mt-6 flex items-center gap-3">
               {[
-                { Icon: Github, href: "https://github.com/Arinzaay007/wink" },
                 { Icon: Twitter, href: "#" },
                 { Icon: Send, href: "#" },
               ].map(({ Icon, href }, i) => (

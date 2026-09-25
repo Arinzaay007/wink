@@ -119,20 +119,12 @@ export default function Home() {
                 transition={{ duration: 0.5, delay: 0.25 }}
                 className="mt-9 flex flex-wrap items-center gap-3"
               >
-                <Link href="/waitlist" className="btn-primary">
-                  Join waitlist — reserve @handle <ArrowRight size={16} />
+                <Link href="/claim" className="btn-primary">
+                  Claim @handle — get started <ArrowRight size={16} />
                 </Link>
                 <Link href="/wink/demo" className="btn-ghost">
                   <Play size={14} /> Try demo
                 </Link>
-                <a
-                  href="https://github.com/Arinzaay007/wink"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-sm text-[color:var(--color-ink-2)] hover:text-white inline-flex items-center gap-1.5 ml-1"
-                >
-                  Open source <ArrowUpRight size={14} />
-                </a>
               </motion.div>
 
               <motion.div
@@ -486,14 +478,14 @@ export default function Home() {
             settled as pathUSD.
           </p>
           <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
-            <Link href="/waitlist" className="btn-primary !px-7 !py-4 !text-base">
-              Join waitlist <ArrowRight size={18} />
-            </Link>
-            <Link href="/claim" className="btn-ghost !px-7 !py-4 !text-base">
-              Claim @handle now
+            <Link href="/claim" className="btn-primary !px-7 !py-4 !text-base">
+              Claim @handle now <ArrowRight size={18} />
             </Link>
             <Link href="/docs" className="btn-ghost !px-7 !py-4 !text-base">
               Read protocol
+            </Link>
+            <Link href="/dashboard" className="btn-ghost !px-7 !py-4 !text-base">
+              Open dashboard
             </Link>
           </div>
           <div className="mt-14 inline-flex items-center gap-4 text-mono text-xs text-[color:var(--color-ink-3)]">

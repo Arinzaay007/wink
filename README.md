@@ -13,7 +13,7 @@ carried across four money paths, all settling as stablecoins (pathUSD) on
 | 🌉 **Any chain in, Tempo out** | anyone | send USDC on Base/Eth/Arb/Op/Poly → auto-forwards to pathUSD on Tempo |
 
 > **The rails are free. The names are the business.** 0% platform fee;
-> monetization = premium short handles (roadmap).
+> monetization = premium short handles, private zones, and enterprise payroll.
 
 ---
 
@@ -73,7 +73,7 @@ Everything below settled **on-chain on Tempo mainnet** (chain 42431 / 4217). Cli
    create a pending `transfers` row, return exact on-chain params incl. a
    32-byte reconciliation memo `wk_<transferId>`
 2. **sign** — the payer's wallet signs `transferWithMemo` (injected EIP-1193
-   wallet, or demo wallet)
+   wallet, or self-custody wallet)
 3. **confirm** (`/api/wink/confirm`) — we pull the receipt and verify the
    `TransferWithMemo` event (recipient + amount + memo) **before** marking
    anything confirmed, then write append-only double-entry `ledger_entries`
@@ -85,7 +85,6 @@ Everything below settled **on-chain on Tempo mainnet** (chain 42431 / 4217). Cli
 
 - ✅ verify on-chain before confirm — every path (wink, sale, wage, bridge
   arrival, MPP unlock) re-checks the receipt independently
-- ✅ never expose recipient addresses publicly (privacy-safe `/api/resolve`)
 - ✅ no custody — keys live in the browser; transfers are non-custodial
 - ✅ append-only ledger; the `transfers.txHash` unique constraint makes
   every credit idempotent
@@ -119,14 +118,14 @@ npm test                    # automated tests
 Mainnet config: RPC `https://rpc.tempo.xyz`, chain 42431, pathUSD
 `0x20c0000000000000000000000000000000000000`.
 
-Live burner for demo: `0x9979Df521d62d21a62FaF46F6BadCfc70add573e` — same address on
+Live forwarder: `0x9979Df521d62d21a62FaF46F6BadCfc70add573e` — same address on
 all EVM chains. Send Base USDC there, it auto-forwards to pathUSD on Tempo.
 
 ---
 
 ## 🛣️ Roadmap
 
-Hackathon = distribution; product built company-safe. Next: Tempo Zones
-(private amounts), premium short handles, embedded wallet provider.
+- **Live:** Tips, merchant checkout, pay requests, batch payroll, MPP agents, cross-chain auto-forward — all on mainnet
+- **Next:** Private Zones (confidential payroll), premium short handles, embedded wallet provider, enterprise compliance dashboard
 
-**Built for the [Colosseum Crypto World's Fair](https://colosseum.com/worldsfair) — Tempo $100k track.**
+Wink is live on mainnet at https://winkpay.xyz — claim your @handle and start getting paid.
