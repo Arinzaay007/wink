@@ -320,9 +320,23 @@ export const bridgeWatches = pgTable(
   })
 );
 
+export const waitlist = pgTable(
+  "waitlist",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    email: text("email").notNull(),
+    source: text("source").notNull().default("waitlist.winkpay.xyz"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => ({
+    emailUq: uniqueIndex("waitlist_email_uq").on(t.email),
+  })
+);
+
 export type User = typeof users.$inferSelect;
 export type Username = typeof usernames.$inferSelect;
 export type Wallet = typeof wallets.$inferSelect;
 export type Transfer = typeof transfers.$inferSelect;
 export type EmailNotification = { email: string; amountMicro: number };
 export type BridgeWatch = typeof bridgeWatches.$inferSelect;
+export type WaitlistEntry = typeof waitlist.$inferSelect;

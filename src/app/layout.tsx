@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import { Bricolage_Grotesque, Geist, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
-import { Nav } from "@/components/Nav";
-import { Footer } from "@/components/Footer";
 
 const display = Bricolage_Grotesque({
   subsets: ["latin"],
@@ -62,9 +60,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${display.variable} ${sans.variable} ${mono.variable}`}>
       <body className="min-h-screen bg-[color:var(--color-bg)] text-[color:var(--color-ink)] antialiased">
-        <Nav />
-        <main className="relative min-h-[calc(100vh-200px)]">{children}</main>
-        <Footer />
+        {children}
       </body>
     </html>
   );
