@@ -115,10 +115,33 @@ npm run bot                          # optional: telegram "you've been winked �
           </div>
         </section>
 
+        <section className="mt-20">
+          <div className="text-mono text-[11px] uppercase tracking-[0.18em] text-[color:var(--color-neon)] mb-4">§ 05 · live proof · mainnet real funds</div>
+          <div className="card p-7 md:p-10">
+            <div className="text-display text-2xl text-white mb-3">Base → Tempo · auto-forward</div>
+            <p className="text-[13px] text-[color:var(--color-ink-2)] leading-relaxed max-w-2xl">Same address on every chain. User sends USDC on Base, forwarder detects &gt; $1, quotes via Relay, solver fills pathUSD on Tempo. Verified independently on both chains — chain is truth.</p>
+            <div className="mt-6 grid md:grid-cols-2 gap-4 font-mono text-[12px]">
+              <div className="bg-black border border-[color:var(--color-line)] rounded-xl p-4">
+                <div className="text-[10px] uppercase tracking-[0.16em] text-[color:var(--color-ink-3)] mb-2">Base mainnet · USDC → Relay depository</div>
+                <div className="text-white break-all">0x343d518fef74e26ddaf7c789e745609a7ecca17cd8ce525d52974b72b6d24298</div>
+                <div className="mt-2 text-[11px] text-[color:var(--color-ink-2)]">$1.00 USDC from 0x9979Df52… to 0x4cd00e38…</div>
+                <a href="https://basescan.org/tx/0x343d518fef74e26ddaf7c789e745609a7ecca17cd8ce525d52974b72b6d24298" target="_blank" className="mt-2 inline-flex text-[11px] text-[color:var(--color-neon)]">View on BaseScan ↗</a>
+              </div>
+              <div className="bg-black border border-[color:var(--color-line)] rounded-xl p-4">
+                <div className="text-[10px] uppercase tracking-[0.16em] text-[color:var(--color-ink-3)] mb-2">Tempo mainnet · Relay solver → pathUSD</div>
+                <div className="text-white break-all">0x113e6430a6fe77054ac2506059780632c98cd42cc643689626e04d3bb0e9dada</div>
+                <div className="mt-2 text-[11px] text-[color:var(--color-ink-2)]">Block 41099471 · 974756 micro pathUSD · from 0xb92fe9… solver</div>
+                <a href="https://explore.tempo.xyz/tx/0x113e6430a6fe77054ac2506059780632c98cd42cc643689626e04d3bb0e9dada" target="_blank" className="mt-2 inline-flex text-[11px] text-[color:var(--color-neon)]">View on Tempo ↗</a>
+              </div>
+            </div>
+            <div className="mt-4 text-[11px] font-mono text-[color:var(--color-ink-3)]">Any chain in, Tempo out. Always. Live on mainnet · requestId 0x179029571593… · fee ~2.5% on $1, ~0.8% on larger amounts.</div>
+          </div>
+        </section>
+
         <section className="mt-24 text-center">
           <div className="inline-flex flex-col items-center gap-5">
             <a href="https://github.com/Arinzaay007/wink" target="_blank" rel="noreferrer" className="btn-primary !py-4 !px-8 !text-base">Star on GitHub <ArrowRight size={16} /></a>
-            <div className="text-mono text-[11px] uppercase tracking-[0.18em] text-[color:var(--color-ink-3)]">MIT · tempo moderato · pathUSD</div>
+            <div className="text-mono text-[11px] uppercase tracking-[0.18em] text-[color:var(--color-ink-3)]">MIT · tempo moderato · pathUSD · mainnet live</div>
           </div>
         </section>
       </div>

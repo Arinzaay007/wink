@@ -165,10 +165,15 @@ export default function WalletPage() {
             </div>
 
             <div className="card p-5">
-              <div className="text-mono text-[10px] uppercase tracking-[0.18em] text-[color:var(--color-ink-3)] mb-2">live proof</div>
-              <div className="text-[13px] text-white">Base 4.99 USDC → 4.962958 pathUSD</div>
-              <div className="text-mono text-[10px] text-[color:var(--color-ink-3)] mt-1">direct 0x20c0…0000 · Tempo mainnet · real funds · verified</div>
-              <Link href="/docs" className="mt-4 inline-flex items-center gap-1 text-[12px] text-[color:var(--color-neon)]">Read architecture <ArrowRight size={12} /></Link>
+              <div className="text-mono text-[10px] uppercase tracking-[0.18em] text-[color:var(--color-ink-3)] mb-2">live proof · mainnet real funds</div>
+              <div className="text-[13px] text-white">Base $1.00 → $0.974756 pathUSD · auto-forward</div>
+              <div className="text-mono text-[10px] text-[color:var(--color-ink-3)] mt-1 break-all">Base 0x343d51…4298 → Tempo 0x113e64…dada</div>
+              <div className="mt-3 flex gap-3 text-[11px]">
+                <a href="https://basescan.org/tx/0x343d518fef74e26ddaf7c789e745609a7ecca17cd8ce525d52974b72b6d24298" target="_blank" className="text-[color:var(--color-neon)]">BaseScan ↗</a>
+                <a href="https://explore.tempo.xyz/tx/0x113e6430a6fe77054ac2506059780632c98cd42cc643689626e04d3bb0e9dada" target="_blank" className="text-[color:var(--color-neon)]">Tempo ↗</a>
+                <Link href="/docs" className="ml-auto text-[color:var(--color-ink-2)] flex items-center gap-1">Docs <ArrowRight size={10} /></Link>
+              </div>
+              <div className="mt-3 text-[11px] text-[color:var(--color-ink-2)]">Burner 0x9979Df52… · $1 detected, forwarded via Relay depository 0x4cd00e…, solver 0xb92fe9… filled Tempo block 41099471. Chain is truth.</div>
             </div>
           </div>
         </div>
