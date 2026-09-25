@@ -22,7 +22,17 @@ const baseClient = createPublicClient({ chain: base, transport: http("https://ma
 const USDC_BASE = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as Address;
 const RELAY_DEPOSITORY = "0x4cd00e387622c35bddb9b4c962c136462338bc31" as Address;
 
-const SPONSOR_FEE_MICRO = 50_000; // $0.05 fixed for $1-10, self-sustaining
+const FRIENDLY_FEE_BPS = 100; // 1% = 100 bps, friendly
+const FRIENDLY_FEE_MIN_MICRO = 10_000; // $0.01 min
+const FRIENDLY_FEE_MAX_MICRO = 100_000; // $0.10 max cap, super friendly
+
+function calculateFriendlyFee(amountMicro: bigint): bigint {
+  // 1% of amount, but min $0.01, max $0.10 — friendliest possible while self-sustaining
+  const onePercent = (amountMicro * BigInt(FRIENDLY_FEE_BPS)) / 10000n;
+  if (onePercent < BigInt(FRIENDLY_FEE_MIN_MICRO)) return BigInt(FRIENDLY_FEE_MIN_MICRO);
+  if (onePercent > BigInt(FRIENDLY_FEE_MAX_MICRO)) return BigInt(FRIENDLY_FEE_MAX_MICRO);
+  return onePercent;
+}
 
 // EIP-2612 permit domain for Base USDC
 function getPermitDomain() {
@@ -107,10 +117,10 @@ export async function gaslessForward(params: {
   const amount = BigInt(params.amountMicro ?? Number(usdcRaw));
   if (amount < 1_000_000n) throw new Error("min $1 for gasless forward");
 
-  // 2. Sponsor fee stays in sponsor wallet (self-sustaining)
-  const sponsorFee = BigInt(SPONSOR_FEE_MICRO);
+  // Friendly fee: 1% min $0.01 max $0.10 — stays in sponsor wallet to refill ETH, self-sustaining
+  const sponsorFee = calculateFriendlyFee(amount);
   const forwardAmount = amount - sponsorFee;
-  if (forwardAmount < 500_000n) throw new Error("amount too low after sponsor fee");
+  if (forwardAmount < 500_000n) throw new Error("amount too low after friendly fee");
 
   const deadline = BigInt(Math.floor(Date.now() / 1000) + 3600); // 1 hour
 

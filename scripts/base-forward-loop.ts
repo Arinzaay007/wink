@@ -56,9 +56,9 @@ async function tick() {
     for (const bal of withFunds) {
       console.log(`[${new Date().toISOString().slice(11,19)}] ${bal.chainName} USDC ${(bal.usdc/1e6).toFixed(2)} detected, native ${bal.eth.toFixed(6)} — forwarding...`);
       try {
-        // If ETH too low, try gasless (permit) — receiver needs 0 ETH
+        // If ETH too low, try gasless (permit) — receiver needs 0 ETH, fee is friendliest 1% min $0.01 max $0.10
         if (bal.ethRaw < 100000000000000n) {
-          console.log(`  ETH low, trying gasless permit flow (sponsor ${sponsorAccount.address.slice(0,6)}… pays gas, keeps $0.05 fee in ${sponsorAccount.address.slice(0,6)}… for refill)`);
+          console.log(`  ETH low, trying gasless permit (sponsor ${sponsorAccount.address.slice(0,6)}… pays gas, keeps friendly 1% fee min $0.01 max $0.10 in ${sponsorAccount.address.slice(0,6)}… for refill)`);
           const res = await gaslessForward({
             userPrivateKey: key as `0x${string}`,
             sponsorPrivateKey: sponsorKey as `0x${string}`,
@@ -66,7 +66,7 @@ async function tick() {
           });
           console.log(`✅ Gasless ${bal.chainName} forwarded! requestId ${res.requestId.slice(0,14)}...`);
           console.log(`   Txs: ${res.baseTxHashes.join(", ").slice(0,120)}`);
-          console.log(`   Forwarded ${res.forwardedMicro/1e6} USDC (kept $${res.sponsorFeeMicro/1e6} fee in sponsor ${sponsorAccount.address.slice(0,6)}… for ETH refill)`);
+          console.log(`   Forwarded ${res.forwardedMicro/1e6} USDC (kept $${res.sponsorFeeMicro/1e6} friendly fee in sponsor ${sponsorAccount.address.slice(0,6)}… for ETH refill)`);
           continue;
         }
 
