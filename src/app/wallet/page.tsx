@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Wallet, ArrowRight, RefreshCw, Globe2, Zap, ShieldCheck, Activity } from "lucide-react";
+import { ArrowLeft, Wallet, ArrowRight, RefreshCw, Globe2, Zap, ShieldCheck, Activity, Eye, EyeOff, Copy, AlertTriangle } from "lucide-react";
 import { BgFx } from "@/components/BgFx";
 import { loadDemoWallet, fetchBalance } from "@/lib/demoWallet";
 
@@ -23,19 +23,23 @@ type PortfolioData = {
 export default function WalletPage() {
   const [data, setData] = useState<PortfolioData | null>(null);
   const [demoAddr, setDemoAddr] = useState<string | null>(null);
+  const [demoPk, setDemoPk] = useState<string | null>(null);
   const [demoTempo, setDemoTempo] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [forwarding, setForwarding] = useState<string | null>(null);
+  const [showPk, setShowPk] = useState(false);
+  const [confirmExport, setConfirmExport] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const w = loadDemoWallet();
     if (w) {
       setDemoAddr(w.address);
+      setDemoPk(w.privateKey);
       fetchBalance(w.address as any).then((b) => setDemoTempo(b.toFixed(2))).catch(() => {});
     }
     (async () => {
       try {
-        // try with demo address if guest, else session
         const addr = w?.address ? `?address=${w.address}` : "";
         const res = await fetch(`/api/portfolio${addr}`);
         const json = await res.json();
@@ -43,6 +47,15 @@ export default function WalletPage() {
       } catch {} finally { setLoading(false); }
     })();
   }, []);
+
+  const copyPk = async () => {
+    if (!demoPk) return;
+    try {
+      await navigator.clipboard.writeText(demoPk);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {}
+  };
 
   const totals = data?.totals;
   const hasStranded = data?.wallets?.some((w) => w.stranded.length > 0);
@@ -128,6 +141,58 @@ export default function WalletPage() {
                 )}
               </div>
             </div>
+
+            {demoAddr && demoPk && (
+              <div className="card p-6 border border-amber-500/20">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="text-mono text-[10px] uppercase tracking-[0.18em] text-[color:var(--color-ink-3)]">self-custody · private key</div>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/20 flex items-center gap-1"><AlertTriangle size={10} /> sensitive</span>
+                </div>
+                <p className="text-[12px] text-[color:var(--color-ink-2)] leading-relaxed">
+                  Your wallet is stored only in this browser. We never have your private key. Export it now and save in a password manager — if you clear browser data, funds are gone.
+                </p>
+
+                {!confirmExport ? (
+                  <button
+                    onClick={() => setConfirmExport(true)}
+                    className="mt-4 btn-ghost !py-2.5 !text-[12px] border border-amber-500/30 hover:border-amber-500/50"
+                  >
+                    <Eye size={12} /> Export private key
+                  </button>
+                ) : (
+                  <div className="mt-4 space-y-4">
+                    <div className="rounded-xl bg-amber-500/10 border border-amber-500/20 p-4 text-[11px] text-amber-200 leading-relaxed">
+                      <strong className="text-amber-100">WARNING:</strong> Anyone with this private key can steal all funds on all chains (same address everywhere). Never share it, never paste into a website. This is your only backup.
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => setConfirmExport(false)} className="btn-ghost !py-2 !text-[11px]">
+                        Cancel
+                      </button>
+                      <button
+                        onClick={() => setShowPk((v) => !v)}
+                        className="btn-ghost !py-2 !text-[11px] border border-[color:var(--color-line)]"
+                      >
+                        {showPk ? <><EyeOff size={12} /> Hide</> : <><Eye size={12} /> Reveal</>}
+                      </button>
+                    </div>
+
+                    {showPk && (
+                      <div className="space-y-3">
+                        <div className="bg-black border border-red-500/30 rounded-xl p-4">
+                          <div className="text-mono text-[10px] uppercase tracking-[0.16em] text-red-300 mb-2">private key — keep secret</div>
+                          <div className="font-mono text-[11px] text-white break-all select-all">{demoPk}</div>
+                        </div>
+                        <button onClick={copyPk} className="btn-primary !py-2.5 !text-[12px] w-full justify-center">
+                          <Copy size={12} /> {copied ? "Copied!" : "Copy private key"}
+                        </button>
+                        <div className="text-[10px] text-[color:var(--color-ink-3)] text-center">Address: {demoAddr}</div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="card p-6">
               <div className="text-mono text-[10px] uppercase tracking-[0.18em] text-[color:var(--color-ink-3)] mb-3">how auto-forward works</div>
