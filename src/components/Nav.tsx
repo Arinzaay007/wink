@@ -1,10 +1,10 @@
 "use client";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { WinkLogo } from "./Logo";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState } from "react";
-import { Menu, X, ArrowUpRight } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Menu, X, ArrowUpRight, LogOut } from "lucide-react";
 
 const NAV = [
   { to: "/", label: "Home" },
@@ -19,9 +19,45 @@ const NAV = [
   { to: "/docs", label: "Docs" },
 ];
 
+type Me = { handles?: string[]; user?: { displayName?: string } } | null;
+
 export function Nav() {
   const [open, setOpen] = useState(false);
+  const [me, setMe] = useState<Me>(null);
+  const [loading, setLoading] = useState(true);
   const pathname = usePathname();
+  const router = useRouter();
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/me", { cache: "no-store" });
+        if (!res.ok) throw new Error("no session");
+        const data = await res.json();
+        if (!cancelled) setMe(data);
+      } catch {
+        if (!cancelled) setMe(null);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [pathname]);
+
+  const handle = me?.handles?.[0];
+  const isAuthed = !!me && !!handle;
+
+  const signOut = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch {}
+    setMe(null);
+    router.push("/");
+    router.refresh();
+  };
 
   return (
     <>
@@ -61,9 +97,41 @@ export function Nav() {
             <Link href="/docs" className="hidden md:inline-flex btn-ghost !py-2 !px-3 text-[13px] !rounded-lg">
               Docs <ArrowUpRight size={14} />
             </Link>
-            <Link href="/wink/demo" className="btn-primary !py-2 !px-3 text-[13px] !rounded-lg">
-              Get a handle
-            </Link>
+
+            {!loading && (
+              <>
+                {isAuthed ? (
+                  <>
+                    <Link
+                      href={`/wink/${handle}`}
+                      className="hidden md:inline-flex btn-ghost !py-2 !px-3 text-[13px] !rounded-lg border border-[color:var(--color-neon)]/30 text-[color:var(--color-neon)]"
+                    >
+                      @{handle} · live
+                    </Link>
+                    <Link href="/dashboard" className="btn-primary !py-2 !px-3 text-[13px] !rounded-lg">
+                      Dashboard
+                    </Link>
+                    <button
+                      onClick={signOut}
+                      className="hidden md:inline-flex w-8 h-8 rounded-lg border border-[color:var(--color-line)] items-center justify-center text-[color:var(--color-ink-2)] hover:text-white"
+                      title="Sign out"
+                    >
+                      <LogOut size={14} />
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Link href="/login" className="hidden md:inline-flex btn-ghost !py-2 !px-3 text-[13px] !rounded-lg">
+                      Sign in
+                    </Link>
+                    <Link href="/claim" className="btn-primary !py-2 !px-3 text-[13px] !rounded-lg">
+                      Sign up
+                    </Link>
+                  </>
+                )}
+              </>
+            )}
+
             <button
               aria-label="Menu"
               className="lg:hidden ml-1 p-2 rounded-lg border border-[color:var(--color-line)] text-white"
@@ -101,6 +169,37 @@ export function Nav() {
                   </Link>
                 );
               })}
+              <div className="col-span-2 mt-2 grid grid-cols-2 gap-2">
+                {isAuthed ? (
+                  <>
+                    <Link
+                      href={`/wink/${handle}`}
+                      onClick={() => setOpen(false)}
+                      className="btn-ghost justify-center !py-3 border border-[color:var(--color-neon)]/30 text-[color:var(--color-neon)]"
+                    >
+                      @{handle} · live
+                    </Link>
+                    <button
+                      onClick={() => {
+                        setOpen(false);
+                        signOut();
+                      }}
+                      className="btn-ghost justify-center !py-3"
+                    >
+                      Sign out
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Link href="/login" onClick={() => setOpen(false)} className="btn-ghost justify-center !py-3">
+                      Sign in
+                    </Link>
+                    <Link href="/claim" onClick={() => setOpen(false)} className="btn-primary justify-center !py-3">
+                      Sign up
+                    </Link>
+                  </>
+                )}
+              </div>
             </div>
           </motion.div>
         )}
