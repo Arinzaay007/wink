@@ -64,6 +64,33 @@ export async function confirmTransfer(
       .set({ status: "paid", transferId: transfer.id, resolvedAt: new Date() })
       .where(eq(payRequests.id, transfer.payRequestId));
   }
+
+  // notification — email recipient that they received funds (non-blocking, best-effort)
+  try {
+    const { users, usernames } = await import("@/db/schema");
+    const { eq: eq2 } = await import("drizzle-orm");
+    const recipient = await db.query.users.findFirst({ where: eq2(users.id, transfer.toUserId) });
+    const recipientHandle = await db.query.usernames.findFirst({ where: eq2(usernames.userId, transfer.toUserId) });
+    if (recipient?.email) {
+      const { Resend } = await import("resend");
+      const resend = new Resend(process.env.RESEND_API_KEY || "");
+      const amount = (transfer.amountMicro / 1_000_000).toFixed(2);
+      const fromShort = transfer.fromAddress ? `${transfer.fromAddress.slice(0, 6)}…${transfer.fromAddress.slice(-4)}` : "someone";
+      await resend.emails.send({
+        from: process.env.WINK_MAIL_FROM || "Wink <noreply@www.winkpay.xyz>",
+        to: recipient.email,
+        subject: `You received $${amount} ${transfer.currency || "pathUSD"} — @${recipientHandle?.handle || "you"}`,
+        html: `<div style="font-family:system-ui, sans-serif; background:#000; color:#fff; padding:24px; border-radius:16px; max-width:480px">
+          <div style="font-size:20px; font-weight:600; margin-bottom:8px">You received $${amount}</div>
+          <div style="color:#aaa; font-size:13px; margin-bottom:16px">From ${fromShort} → @${recipientHandle?.handle || "you"} · ${transfer.message ? `"${transfer.message}"` : ""}</div>
+          <div style="background:#111; border:1px solid #222; border-radius:12px; padding:12px; font-mono:11px; margin-bottom:16px">Tx: ${facts.txHash}<br/>Memo: ${transfer.memo || ""}</div>
+          <a href="https://www.winkpay.xyz/wallet" style="display:inline-block; background:#ff1f3d; color:#fff; padding:10px 18px; border-radius:999px; text-decoration:none; font-size:13px">Open wallet →</a>
+          <div style="margin-top:16px; color:#666; font-size:11px">Wink — Pay a @username, any chain in, Tempo out. 0% fee.</div>
+        </div>`,
+      }).catch(() => {});
+    }
+  } catch {}
+
   return "confirmed";
 }
 

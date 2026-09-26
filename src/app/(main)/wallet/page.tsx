@@ -8,7 +8,7 @@ import { loadDemoWallet, fetchBalance, sendWink } from "@/lib/demoWallet";
 import { isAddress } from "viem";
 import QrScanner from "@/components/QrScanner";
 
-type Me = { handles: string[]; user?: { displayName?: string } } | null;
+type Me = { handles: string[]; user?: { displayName?: string }; incoming?: any[] } | null;
 
 type PortfolioWallet = {
   address: string;
@@ -276,6 +276,48 @@ export default function WalletPage() {
               <div className="text-[11px] text-[color:var(--color-ink-2)] mt-1.5">{s.sub}</div>
             </motion.div>
           ))}
+        </div>
+
+        {/* transaction history — NEW */}
+        <div className="card overflow-hidden mb-8">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-[color:var(--color-line)]">
+            <h3 className="text-display text-lg text-white">Transaction history</h3>
+            <div className="flex items-center gap-2">
+              <span className="text-mono text-[10px] uppercase tracking-[0.16em] text-[color:var(--color-ink-3)]">{me?.incoming?.length || 0} payments</span>
+              <button onClick={() => window.location.reload()} className="text-mono text-[10px] uppercase tracking-[0.16em] text-[color:var(--color-ink-3)] hover:text-white flex items-center gap-1"><RefreshCw size={10} /> refresh</button>
+            </div>
+          </div>
+          {me?.incoming && me.incoming.length > 0 ? (
+            <div className="divide-y divide-[color:var(--color-line)]">
+              {me.incoming.slice(0, 20).map((t: any, i: number) => (
+                <motion.div key={t.id || i} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.02 }} className="flex items-center gap-4 p-4 hover:bg-white/[0.02] transition">
+                  <div className="w-9 h-9 rounded-full bg-[color:var(--color-neon-soft)] border border-[color:var(--color-neon)]/20 flex items-center justify-center shrink-0">
+                    <span className="text-[color:var(--color-neon)] text-[13px] font-medium">$</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-white text-[14px] font-medium">+${(t.amountMicro / 1_000_000).toFixed(2)}</span>
+                      <span className="text-[11px] text-[color:var(--color-ink-3)] font-mono">{new Date(t.createdAt).toLocaleDateString()} {new Date(t.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+                      <span className={`text-[9px] px-1.5 py-0.5 rounded-full border ${t.status === "confirmed" ? "border-green-500/30 text-green-400 bg-green-500/10" : "border-amber-500/30 text-amber-300 bg-amber-500/10"}`}>{t.status}</span>
+                    </div>
+                    <div className="text-[12px] text-[color:var(--color-ink-2)] truncate mt-0.5">{t.message || t.memo || "Payment"}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-mono text-[10px] text-[color:var(--color-ink-3)]">{t.fromAddress?.slice(0, 6)}…</div>
+                    {t.txHash && <a href={`https://explore.tempo.xyz/tx/${t.txHash}`} target="_blank" className="text-[10px] text-[color:var(--color-neon)] hover:underline">view ↗</a>}
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          ) : (
+            <div className="p-10 text-center">
+              <div className="w-10 h-10 rounded-full bg-white/[0.04] border border-[color:var(--color-line)] flex items-center justify-center mx-auto mb-3">
+                <Wallet size={16} className="text-[color:var(--color-ink-3)]" />
+              </div>
+              <div className="text-white text-[14px]">No transactions yet</div>
+              <div className="text-[12px] text-[color:var(--color-ink-3)] mt-1">Payments you receive will appear here with notification.</div>
+            </div>
+          )}
         </div>
 
         {/* actions + info */}
