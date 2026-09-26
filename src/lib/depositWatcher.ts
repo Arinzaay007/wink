@@ -11,7 +11,7 @@
 import { eq } from "drizzle-orm";
 import type { Address, Hash } from "viem";
 import type { WinkDb } from "@/db";
-import { wallets, transfers, usernames } from "@/db/schema";
+import { wallets, transfers, usernames, ledgerEntries } from "@/db/schema";
 import { publicClientMainnet, publicClient, PATH_USD } from "./tempo";
 import { TEMPO_USDC_E } from "./relay";
 import { notifyFundsReceived } from "./notify";
@@ -98,6 +98,14 @@ export async function scanDirectDeposits(
             .returning();
 
           if (row) {
+            // also ledger entry for accounting
+            try {
+              await db.insert(ledgerEntries).values({
+                transferId: row.id,
+                account: `recipient:${userId}`,
+                amountMicro: Number(value),
+              });
+            } catch {}
             created++;
             // notify — non-blocking
             await notifyFundsReceived(db, {

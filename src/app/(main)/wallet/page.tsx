@@ -82,6 +82,15 @@ export default function WalletPage() {
         fetch("/api/deposits/scan", { method: "POST", credentials: "include" }).catch(() => {});
         const meRes = await fetch("/api/me", { cache: "no-store", credentials: "include" }).then(r => r.ok ? r.json() : null).catch(() => null);
         if (meRes) setMe(meRes);
+        // if logged in and demo wallet exists, link it to account (device-specific demo → handle)
+        if (meRes?.handles?.length && w?.address) {
+          fetch("/api/wallet/link", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({ address: w.address, kind: "inapp", label: "demo wallet" }),
+          }).catch(() => {});
+        }
         // portfolio: if logged in, fetch all linked wallets (no ?address), else use demo addr
         const isLoggedIn = !!(meRes?.handles?.length);
         const portfolioUrl = isLoggedIn ? "/api/portfolio" : (w?.address ? `/api/portfolio?address=${w.address}` : "/api/portfolio");
@@ -379,7 +388,7 @@ export default function WalletPage() {
         </div>
 
         {/* balances */}
-        <div className="grid sm:grid-cols-3 gap-3 mb-8">
+        <div className="grid sm:grid-cols-3 gap-3 mb-4">
           {[
             { k: "tempo · pathUSD", v: totals ? `$${totals.tempoFormatted}` : demoTempo ? `$${demoTempo}` : loading ? "…" : "$0.00", sub: "settled · verified" },
             { k: "stranded · other chains", v: totals ? `$${totals.strandedFormatted}` : "—", sub: hasStranded ? "will auto-forward" : "all on tempo" },
@@ -392,6 +401,24 @@ export default function WalletPage() {
             </motion.div>
           ))}
         </div>
+
+        {/* wallets breakdown — explains why mobile vs desktop differs */}
+        {data?.wallets && data.wallets.length > 0 && (
+          <div className="card p-4 mb-8">
+            <div className="text-mono text-[10px] uppercase tracking-[0.16em] text-[color:var(--color-ink-3)] mb-3">linked wallets · {data.wallets.length} {me?.handles?.length ? `(for @${handle})` : "(guest — login to see all)"}</div>
+            <div className="space-y-2">
+              {data.wallets.map((w: any) => (
+                <div key={w.address} className="flex items-center gap-3 bg-black border border-[color:var(--color-line)] rounded-xl px-4 py-2.5 text-[12px]">
+                  <span className="font-mono text-white">{w.address.slice(0,6)}…{w.address.slice(-4)}</span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/10 text-ink-300">{w.address === demoAddr ? "this device demo" : w.address === ownAddr ? "connected" : "linked"}</span>
+                  <span className="ml-auto text-white font-mono">${w.tempo.formatted}</span>
+                  {w.stranded?.length > 0 && <span className="text-amber-300 text-[10px]">+${w.stranded.reduce((s:number, x:any)=>s+Number(x.usdc),0).toFixed(2)} stranded</span>}
+                </div>
+              ))}
+            </div>
+            <div className="mt-2 text-[10px] text-[color:var(--color-ink-3)]">Demo wallet is per-device (localStorage). Login on each device with same email to link it to your @handle and see combined total. Guest view shows only this device demo.</div>
+          </div>
+        )}
 
         {/* transaction history — NEW */}
         <div className="card overflow-hidden mb-8">
