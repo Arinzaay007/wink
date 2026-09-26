@@ -25,7 +25,7 @@ import {
   connectWalletAnyChain,
   injectedWalletClient,
 } from "@/lib/connectedWallet";
-import { PATH_USD, TIP20_ABI } from "@/lib/tempo";
+import { PATH_USD, TIP20_ABI, TEMPO_NETWORK } from "@/lib/tempo";
 import type { Address } from "viem";
 
 const PRESETS = [1, 3, 5, 10];
@@ -207,9 +207,13 @@ export default function TipForm({
 
       const bal = balance ?? (await fetchBalance(fromAddress as Address));
       if (useOwn && bal * 1_000_000 < amountMicro)
-        throw new Error(`insufficient pathUSD — your wallet holds $${bal.toFixed(2)}`);
-      if (!useOwn && bal * 1_000_000 < amountMicro + 100_000)
+        throw new Error(`insufficient pathUSD — your wallet holds $${bal.toFixed(2)} on Tempo ${TEMPO_NETWORK}`);
+      if (!useOwn && bal * 1_000_000 < amountMicro + 100_000) {
+        if (TEMPO_NETWORK === "mainnet") {
+          throw new Error(`Demo wallet empty ($${bal.toFixed(2)}) on mainnet — connect your own wallet with pathUSD, or receive a wink first to fund it. No faucet on mainnet.`);
+        }
         await fundDemoWallet(await ensureDemoWallet() as DemoWallet);
+      }
 
       setStage("signing");
       const prep = await fetch("/api/wink/prepare", {

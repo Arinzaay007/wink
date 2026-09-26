@@ -7,6 +7,7 @@ import { BgFx } from "@/components/BgFx";
 import { loadDemoWallet, fetchBalance, sendWink } from "@/lib/demoWallet";
 import { isAddress } from "viem";
 import QrScanner from "@/components/QrScanner";
+import { TEMPO_NETWORK } from "@/lib/tempo";
 
 type Me = { handles: string[]; user?: { displayName?: string }; incoming?: any[] } | null;
 
@@ -171,7 +172,7 @@ export default function WalletPage() {
       const w = loadDemoWallet();
       if (!w) throw new Error("No wallet — claim a handle first");
       const bal = await fetchBalance(w.address as any);
-      if (bal * 1_000_000 < amountMicro) throw new Error(`Insufficient — you have $${bal.toFixed(2)} pathUSD`);
+      if (bal * 1_000_000 < amountMicro) throw new Error(`Insufficient — you have $${bal.toFixed(2)} pathUSD on ${TEMPO_NETWORK}. ${TEMPO_NETWORK === "mainnet" ? "Demo wallet has no faucet on mainnet — receive a wink first or use /send with connected wallet (any chain → Tempo)." : ""}`);
       setSending(true); setSendStage("signing");
       const prep = await fetch("/api/wink/prepare", {
         method: "POST", headers: { "content-type": "application/json" },
@@ -204,7 +205,7 @@ export default function WalletPage() {
       const w = loadDemoWallet();
       if (!w) throw new Error("No wallet — claim a handle first");
       const bal = await fetchBalance(w.address as any);
-      if (bal * 1_000_000 < amountMicro) throw new Error(`Insufficient — you have $${bal.toFixed(2)} pathUSD`);
+      if (bal * 1_000_000 < amountMicro) throw new Error(`Insufficient — you have $${bal.toFixed(2)} pathUSD on ${TEMPO_NETWORK}. ${TEMPO_NETWORK === "mainnet" ? "Demo wallet has no faucet on mainnet — receive first or use /send." : ""}`);
       setSending(true); setSendStage("signing");
       const prep = await fetch("/api/send/address", {
         method: "POST", headers: { "content-type": "application/json" },
