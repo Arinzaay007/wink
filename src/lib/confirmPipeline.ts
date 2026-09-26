@@ -67,8 +67,10 @@ export async function confirmTransfer(
 
   // notification — email recipient that they received funds (non-blocking, best-effort)
   try {
-    const recipient = await db.query.users.findFirst({ where: eq(users.id, transfer.toUserId) });
-    const recipientHandle = await db.query.usernames.findFirst({ where: eq(usernames.userId, transfer.toUserId) });
+    const recipientRows = await db.select().from(users).where(eq(users.id, transfer.toUserId)).limit(1);
+    const recipient = recipientRows[0];
+    const handleRows = await db.select().from(usernames).where(eq(usernames.userId, transfer.toUserId)).limit(1);
+    const recipientHandle = handleRows[0];
     if (recipient?.email) {
       const { Resend } = await import("resend");
       const resend = new Resend(process.env.RESEND_API_KEY || "");
