@@ -2,10 +2,11 @@
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Wallet, ArrowRight, RefreshCw, Copy, Check, Send, QrCode, Eye, EyeOff, AlertTriangle, AtSign, Globe2, X } from "lucide-react";
+import { ArrowLeft, Wallet, ArrowRight, RefreshCw, Copy, Check, Send, QrCode, Eye, EyeOff, AlertTriangle, AtSign, Globe2, X, ScanLine } from "lucide-react";
 import { BgFx } from "@/components/BgFx";
 import { loadDemoWallet, fetchBalance, sendWink } from "@/lib/demoWallet";
 import { isAddress } from "viem";
+import QrScanner from "@/components/QrScanner";
 
 type Me = { handles: string[]; user?: { displayName?: string } } | null;
 
@@ -59,6 +60,7 @@ export default function WalletPage() {
   const [showPk, setShowPk] = useState(false);
   const [confirmExport, setConfirmExport] = useState(false);
   const [copiedPk, setCopiedPk] = useState(false);
+  const [showScanner, setShowScanner] = useState(false);
 
   useEffect(() => {
     const w = loadDemoWallet();
@@ -96,6 +98,67 @@ export default function WalletPage() {
       setter(true);
       setTimeout(() => setter(false), 2000);
     } catch {}
+  };
+
+  const handleScan = (text: string) => {
+    setShowScanner(false);
+    // parse winkpay.xyz/wink/@handle or /pay/@handle or 0x address or @handle
+    try {
+      const t = text.trim();
+      if (isAddress(t as any)) {
+        setToExternal(t);
+        setSendMode("address");
+        setShowSend(true);
+        return;
+      }
+      // try URL
+      if (t.includes("winkpay.xyz") || t.includes("/wink/") || t.includes("/pay/")) {
+        const url = new URL(t.startsWith("http") ? t : `https://${t}`);
+        const parts = url.pathname.split("/").filter(Boolean);
+        // /wink/handle or /pay/handle
+        const idxWink = parts.indexOf("wink");
+        const idxPay = parts.indexOf("pay");
+        let h = "";
+        if (idxWink >= 0 && parts[idxWink + 1]) h = parts[idxWink + 1];
+        else if (idxPay >= 0 && parts[idxPay + 1]) h = parts[idxPay + 1];
+        if (h) {
+          h = h.replace(/^@/, "").toLowerCase();
+          setWinkHandle(h);
+          setSendMode("wink");
+          // check code param for invoice
+          const code = url.searchParams.get("code");
+          if (code) {
+            // could prefill memo? for now just handle
+          }
+          setShowSend(true);
+          return;
+        }
+      }
+      // plain @handle or handle
+      if (t.startsWith("@") || /^[a-z0-9_]{3,20}$/i.test(t)) {
+        setWinkHandle(t.replace(/^@/, "").toLowerCase());
+        setSendMode("wink");
+        setShowSend(true);
+        return;
+      }
+      // fallback: if contains 0x
+      const match = t.match(/0x[a-fA-F0-9]{40}/);
+      if (match) {
+        setToExternal(match[0]);
+        setSendMode("address");
+        setShowSend(true);
+        return;
+      }
+      // unknown — show as wink handle attempt
+      setWinkHandle(t.slice(0, 20).toLowerCase());
+      setSendMode("wink");
+      setShowSend(true);
+    } catch {
+      // fallback
+      setWinkHandle(text.slice(0, 20).replace(/[^a-z0-9_]/gi, "").toLowerCase());
+      setSendMode("wink");
+      setShowSend(true);
+    }
   };
 
   const doSendWink = async () => {
@@ -188,6 +251,9 @@ export default function WalletPage() {
             </p>
           </div>
           <div className="flex gap-2">
+            <button onClick={() => setShowScanner(true)} className="btn-ghost !py-3 !px-4 !text-[13px] border border-[color:var(--color-line)]">
+              <ScanLine size={16} /> Scan
+            </button>
             <button onClick={() => setShowReceive(true)} className="btn-ghost !py-3 !px-6 !text-[14px] border border-[color:var(--color-line)]">
               <QrCode size={16} /> Receive
             </button>
@@ -309,7 +375,10 @@ export default function WalletPage() {
             <motion.div initial={{ opacity: 0, y: 20, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 20, scale: 0.98 }} className="relative w-full max-w-[480px] card p-0 overflow-hidden border-[color:var(--color-line-2)]">
               <div className="flex items-center justify-between px-6 py-4 border-b border-[color:var(--color-line)]">
                 <h3 className="text-display text-xl text-white">Send</h3>
-                <button onClick={() => setShowSend(false)} className="w-8 h-8 rounded-full bg-white/5 border border-[color:var(--color-line)] flex items-center justify-center"><X size={14} /></button>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => setShowScanner(true)} className="h-8 px-3 rounded-full bg-[color:var(--color-neon-soft)] border border-[color:var(--color-neon)]/30 text-[color:var(--color-neon)] text-[11px] flex items-center gap-1.5"><ScanLine size={12} /> Scan QR</button>
+                  <button onClick={() => setShowSend(false)} className="w-8 h-8 rounded-full bg-white/5 border border-[color:var(--color-line)] flex items-center justify-center"><X size={14} /></button>
+                </div>
               </div>
 
               <div className="p-2 flex gap-2 bg-black/50">
@@ -436,6 +505,16 @@ export default function WalletPage() {
               </div>
             </motion.div>
           </div>
+        )}
+      </AnimatePresence>
+
+      {/* SCAN MODAL */}
+      <AnimatePresence>
+        {showScanner && (
+          <QrScanner
+            onScan={handleScan}
+            onClose={() => setShowScanner(false)}
+          />
         )}
       </AnimatePresence>
     </div>
