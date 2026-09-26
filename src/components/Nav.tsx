@@ -8,13 +8,9 @@ import { Menu, X, ArrowUpRight, LogOut } from "lucide-react";
 
 const NAV = [
   { to: "/", label: "Home" },
-  { to: "/wink/demo", label: "Wink" },
-  { to: "/wall/wedding", label: "Wall" },
+  { to: "/send", label: "Send" },
   { to: "/pay", label: "Pay" },
   { to: "/wallet", label: "Wallet" },
-  { to: "/request/lina", label: "Request" },
-  { to: "/payroll", label: "Payroll" },
-  { to: "/agents", label: "Agents" },
   { to: "/dashboard", label: "Dashboard" },
   { to: "/docs", label: "Docs" },
 ];
