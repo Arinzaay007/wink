@@ -71,6 +71,7 @@ export async function relayQuote(params: {
     headers: { "content-type": "application/json" },
     body: JSON.stringify({
       user: params.sender,
+      recipient: params.receiver, // critical: send to @handle's Tempo address, not back to sender
       originChainId: params.sourceChainId,
       destinationChainId: TEMPO_CHAIN_ID,
       originCurrency: params.sourceToken,
