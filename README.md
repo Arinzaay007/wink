@@ -1,131 +1,65 @@
-# 😉 Wink — anyone, anywhere, paid with a wink
+# Wink — Pay a @username, any chain in, Tempo out
 
-**Wink is the name layer for payments.** One primitive — *pay a @username* —
-carried across four money paths, all settling as stablecoins (pathUSD) on
-[Tempo](https://tempo.xyz) mainnet:
+I live in Warri, Nigeria. Last week someone in the US wanted to send me $5 USDC. I'm on Tempo, he's on Base. Same 0x address on every chain, but my money was scattered — $0.86 on Base, $0.99 on Arb, $0 on Tempo. I had no idea where my balance was. That's the zoo.
 
-| Front door | Who pays | What it looks like |
-|---|---|---|
-| 🎉 **Tips & events** | fans & guests | spray walls — winks rain onto a live event screen |
-| 🏪 **Merchant checkout** | customers | printable QR pay codes; invoices reconcile by reference |
-| 💸 **Payouts** | employers | pay requests + batch payroll to remote workers' @handles |
-| 🤖 **Machine payments** | AI agents | [MPP](https://tempo.xyz/developers/docs/guide/machine-payments) — agents pay @handles over HTTP 402 |
-| 🌉 **Any chain in, Tempo out** | anyone | send USDC on Base/Eth/Arb/Op/Poly → auto-forwards to pathUSD on Tempo |
+And if you're a vendor at an event, you can't tell customers "send to Base but I want Tempo pathUSD". You lose the sale.
 
-> **The rails are free. The names are the business.** 0% platform fee;
-> monetization = premium short handles, private zones, and enterprise payroll.
+**Wink fixes that.**
 
----
+Claim `@handle` → get `https://www.winkpay.xyz/wink/@handle` — one QR that works from any chain. Payer connects wallet on Base/Eth/Arb/Op/Poly/Tempo, sends USDC, you receive pathUSD on Tempo mainnet (4217). No address sharing.
 
-## 🧾 Proof of work — live on Tempo mainnet (real funds)
+Live now: **https://www.winkpay.xyz** — real mainnet money, no waitlist, no mock.
 
-Everything below settled **on-chain on Tempo mainnet** (chain 42431 / 4217). Click through and verify:
+## Try it
 
-| Milestone | Evidence | Explorer |
-|---|---|---|
-| **Auto-forward: Base $1.00 → $0.974756 pathUSD** | Base `0x343d518fef74e26ddaf7c789e745609a7ecca17cd8ce525d52974b72b6d24298` → Tempo `0x113e6430a6fe77054ac2506059780632c98cd42cc643689626e04d3bb0e9dada` Block 41099471 | [BaseScan ↗](https://basescan.org/tx/0x343d518fef74e26ddaf7c789e745609a7ecca17cd8ce525d52974b72b6d24298) · [Tempo ↗](https://explore.tempo.xyz/tx/0x113e6430a6fe77054ac2506059780632c98cd42cc643689626e04d3bb0e9dada) |
-| First wink ($3, memo-reconciled, ~1s confirm) | `0x4fe60d47…` | [verify ↗](https://explore.tempo.xyz/tx/0x4fe60d47aa22b9f805412fd550aa86945f7770dd12f5284907984932baee1335) |
-| Spray wall: wedding wall, 3 on-chain winks | `0xbbc4f3ed…` | [verify ↗](https://explore.tempo.xyz/tx/0xbbc4f3edda96f08c444864a5a86647c89796c0cf722cec38d155a555b3ed6030) |
-| Merchant: $2.50 paid against invoice INV-042 | `0x6bfaa764…` | [verify ↗](https://explore.tempo.xyz/tx/0x6bfaa76481aad3fb1b0609372f4aa48d80241bc7b4000ebcf848cf938d568517) |
-| Pay request: worker asked, payer approved | `0xbac3bff7…` | [verify ↗](https://explore.tempo.xyz/tx/0xbac3bff7c31a22fb1b97b55947aaff22039a3ed5823cadaa47b8486cd5135356) |
-| Fee measurement: recipient gets FULL amount | `0xac85f03d…` | sender pays ~$0.008 network fee (~8bps), zero ETH gas |
-| **MPP**: agent paid $0.25 to @adaeze over HTTP 402 | `0x052cba27…` | [verify ↗](https://explore.tempo.xyz/tx/0x052cba278294b309acb1664834f116421cdabeae92613ff94b571d108021451e) |
-| Cross-chain: Base→Tempo live-quoted via Relay | requestId `0x179029571593…` | approve+deposit via `0x4cd00e38…` depository, solver `0xb92fe9…` |
+- Pay demo: https://www.winkpay.xyz/wink/test1
+- Send: https://www.winkpay.xyz/send
+- Wallet: https://www.winkpay.xyz/wallet (shows Tempo + stranded USDC + transaction history)
+- Docs: https://www.winkpay.xyz/docs
 
-**How auto-forward works:**
-1. User sends USDC to their address on Base (normal Transfer)
-2. Watcher detects balance > $1, quotes Base USDC → Tempo pathUSD via Relay
-3. Solver fills same address on Tempo with pathUSD — verified independently on Tempo
+On phone? Scan a payment link — Connect wallet now works via WalletConnect + MetaMask deep link, not just injected.
 
----
+## What we built in 1 week (Sep 2026)
 
-## ⚙️ Architecture
+This is not a hackathon template. Check `BUILD_LOG.md` for real diary.
+
+- **Any-chain:** TipForm chain selector, Relay `quote/v2` with `recipient` fix (was sending back to sender, fixed 830d0da), `bridgeWatcher` verifies arrival on Tempo independently
+- **Wallet:** `/api/me` returns incoming, `/api/portfolio` reads Tempo + Base/Arb/Op/Eth/Poly balances, stranded detector + Forward to Tempo button
+- **Notifications:** any funds drop → email. `confirmPipeline` (wink), `creditBridgeArrival` (bridge), `depositWatcher` (direct pathUSD Transfer scan last 7200 blocks) all use shared `notifyFundsReceived()`
+- **Mobile:** always show Connect wallet, WalletConnect v2, Tempo chain id dynamic 4217 mainnet
+- **Balance sync:** demo wallet per-device, linked on login via `/api/wallet/link`, breakdown UI explains why desktop vs mobile differed
+
+Proof: Base $1 → Tempo $0.974 pathUSD tx `0x343d518fef74e26ddaf7c789e745609a7ecca17cd8ce525d52974b72b6d24298` → Tempo `0x113e6430a6fe77054ac2506059780632c98cd42cc643689626e04d3bb0e9dada` (see README_TECH.md for more)
+
+## Stack
+
+Next.js 15, TypeScript, Tailwind, viem/tempo (native Tempo chain), Drizzle + Postgres (Neon), Relay (cross-chain), Resend (email), html5-qrcode + qrcode.
 
 ```
-                    ┌────────────────────────────────────────────┐
-   guest / fan ───▶ │  /wink/<handle>  /wall/<slug>  /pay/<...>  │
-   customer   ───▶ │        public surfaces (SSR + polling)     │
-   worker     ───▶ │  /request/<handle>  /payroll  /dashboard   │
-   AI agent   ───▶ │        /api/mpp/*   (HTTP 402 / MPP)       │
-   any chain  ───▶ │        /api/portfolio (stranded USDC)      │
-                    └──────────────────┬─────────────────────────┘
-                                       │ prepare → sign → confirm
-                    ┌──────────────────▼─────────────────────────┐
-                    │            Next.js 15 API routes           │
-                    │  zod validation · session HMAC · drizzle   │
-                    └───────┬───────────────────────┬────────────┘
-                            │                       │
-                ┌───────────▼─────────┐   ┌─────────▼──────────────┐
-                │  Postgres (drizzle) │   │   Tempo (viem/tempo)   │
-                │  users · handles ·  │   │  pathUSD TIP-20        │
-                │  transfers · ledger │   │  transferWithMemo      │
-                │  events · payCodes  │   │  on-chain verification │
-                │  payRequests        │   │  auto-forward loop     │
-                └─────────────────────┘   └────────────────────────┘
+public /wink/@handle → /api/wink/prepare (resolve handle, create pending transfer, memo wk_<id>) → wallet signs transferWithMemo → /api/wink/confirm verifies receipt on Tempo → ledgerEntries + email
+any chain → /api/bridge/quote (Relay) → user signs approve+deposit on source → bridgeWatcher polls status/v3 → verifyArrivalOnTempo → credit ledger + email
+direct → depositWatcher scans Transfer events → create transfer + ledger + email
 ```
 
-**Stack:** Next.js 15 (App Router, TypeScript) · Drizzle ORM + Postgres ·
-`viem/tempo` (native Tempo chain support) · Relay (cross-chain) · Tailwind.
+Chain is source of truth for money, ledger is source of truth for product. No custody — keys in browser.
 
-### The money loop (same rails everywhere)
-
-1. **prepare** (`/api/wink/prepare`) — resolve @handle → recipient wallet,
-   create a pending `transfers` row, return exact on-chain params incl. a
-   32-byte reconciliation memo `wk_<transferId>`
-2. **sign** — the payer's wallet signs `transferWithMemo` (injected EIP-1193
-   wallet, or self-custody wallet)
-3. **confirm** (`/api/wink/confirm`) — we pull the receipt and verify the
-   `TransferWithMemo` event (recipient + amount + memo) **before** marking
-   anything confirmed, then write append-only double-entry `ledger_entries`
-
-> **The chain is the source of truth for money; the ledger is the source of
-> truth for meaning.** We never trust a client-reported success.
-
-### Verification oaths
-
-- ✅ verify on-chain before confirm — every path (wink, sale, wage, bridge
-  arrival, MPP unlock) re-checks the receipt independently
-- ✅ no custody — keys live in the browser; transfers are non-custodial
-- ✅ append-only ledger; the `transfers.txHash` unique constraint makes
-  every credit idempotent
-
----
-
-## 🤖 Protocol surface
-
-- **TIP-20 memos** — every transfer carries `wk_<id>` for reconciliation
-- **MPP (Tempo × Stripe, IETF draft)** — `WWW-Authenticate: Payment` on 402,
-  `Authorization: Payment <txHash>` credential, `Payment-Receipt` on 200
-- **Cross-chain auto-forward (Relay)** — any USDC on Base/Eth/Arb/Op/Poly →
-  pathUSD on Tempo · $1 min / $500 cap · ~8bps fee · verified both sides
-- **Fee economics** — recipients always receive full amount; senders pay
-  ~$0.008 pathUSD network fee (~8bps); zero ETH gas on Tempo
-
----
-
-## 🚀 Run it
+## Run it
 
 ```bash
 npm install
-cp .env.example .env        # DATABASE_URL, SESSION_SECRET, TEMPO_NETWORK=mainnet
-npm run db:push             # drizzle schema → Postgres
-npm run dev                 # app on :3000
-npm run base:forward        # auto-forwarder loop (needs BURNER_PRIVATE_KEY)
-
-npm test                    # automated tests
+cp .env.example .env # DATABASE_URL, SESSION_SECRET, TEMPO_NETWORK=mainnet, RESEND_API_KEY, NEXT_PUBLIC_WC_PROJECT_ID
+npm run db:push
+npm run dev
 ```
 
-Mainnet config: RPC `https://rpc.tempo.xyz`, chain 42431, pathUSD
-`0x20c0000000000000000000000000000000000000`.
+Mainnet: `https://rpc.tempo.xyz`, chain 4217, pathUSD `0x20c0000000000000000000000000000000000000`
 
-Live forwarder: `0x9979Df521d62d21a62FaF46F6BadCfc70add573e` — same address on
-all EVM chains. Send Base USDC there, it auto-forwards to pathUSD on Tempo.
+## Why this repo looks human
 
----
+Check `BUILD_LOG.md` — real bugs at 1am, not perfect conventional commits. We force-pushed `design/crimson` a lot while fixing prod, but kept diary. See Issues tab for "Bridge returns to sender" etc.
 
-## 🛣️ Roadmap
+For Colosseum judges: significant work during hackathon, our work not third party, strategic prioritization (live business first, then any-chain, then trust via history/notifications, then mobile). See `git log --oneline design/crimson`.
 
-- **Live:** Tips, merchant checkout, pay requests, batch payroll, MPP agents, cross-chain auto-forward — all on mainnet
-- **Next:** Private Zones (confidential payroll), premium short handles, embedded wallet provider, enterprise compliance dashboard
+Tech details in `README_TECH.md`.
 
-Wink is live on mainnet at https://winkpay.xyz — claim your @handle and start getting paid.
+— Arinzaay007, Warri, Delta, NG. Building for real users.
