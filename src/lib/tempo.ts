@@ -24,10 +24,15 @@ import { Chain, Addresses } from "viem/tempo";
 // ── network ──────────────────────────────────────────────────────────
 export type TempoNetwork = "testnet" | "mainnet";
 
-export const TEMPO_NETWORK: TempoNetwork =
-  (process.env.TEMPO_NETWORK as TempoNetwork) === "mainnet"
-    ? "mainnet"
-    : "testnet";
+function resolveTempoNetwork(): TempoNetwork {
+  const raw =
+    (process.env.TEMPO_NETWORK as string | undefined) ||
+    (process.env.NEXT_PUBLIC_TEMPO_NETWORK as string | undefined) ||
+    "mainnet"; // live business defaults to mainnet — client bundle has no TEMPO_NETWORK
+  return raw === "testnet" ? "testnet" : "mainnet";
+}
+
+export const TEMPO_NETWORK: TempoNetwork = resolveTempoNetwork();
 
 export const chain =
   TEMPO_NETWORK === "mainnet" ? Chain.tempoMainnet : Chain.tempoModerato;

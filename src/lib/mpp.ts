@@ -13,7 +13,7 @@
  * Status semantics per spec: 402 = payment needed, 401 = auth failed,
  * 403 = policy denial. We keep them separate.
  */
-import { chain, TOKEN_SYMBOL, type TempoNetwork } from "@/lib/tempo";
+import { chain, TOKEN_SYMBOL, TEMPO_NETWORK, type TempoNetwork } from "@/lib/tempo";
 import type { Address } from "viem";
 
 /** Price of a paid resource, in micro-pathUSD. */
@@ -40,7 +40,7 @@ export function mppChallenge(recipient: Address, resource: string) {
     currency: TOKEN_SYMBOL,
     recipient,
     chainId: chain.id,
-    network: (process.env.TEMPO_NETWORK as TempoNetwork) === "mainnet" ? "mainnet" : "testnet",
+    network: TEMPO_NETWORK,
   };
 
   const header =
