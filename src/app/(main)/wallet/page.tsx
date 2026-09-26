@@ -72,11 +72,23 @@ export default function WalletPage() {
     }
     (async () => {
       try {
+        // scan for ANY direct deposits first — creates transfer rows + emails
+        fetch("/api/deposits/scan", { method: "POST" }).catch(() => {});
         const [meRes, portRes] = await Promise.all([
           fetch("/api/me", { cache: "no-store" }).then(r => r.ok ? r.json() : null).catch(() => null),
           fetch(`/api/portfolio${w?.address ? `?address=${w.address}` : ""}`).then(r => r.json()).catch(() => null),
         ]);
         if (meRes) setMe(meRes);
+        // if scan found new deposits, refresh me after 2s
+        setTimeout(async () => {
+          try {
+            const scan = await fetch("/api/deposits/scan", { method: "POST" }).then(r => r.json()).catch(() => null);
+            if (scan?.new > 0) {
+              const fresh = await fetch("/api/me", { cache: "no-store" }).then(r => r.json()).catch(() => null);
+              if (fresh) setMe(fresh);
+            }
+          } catch {}
+        }, 2500);
         if (portRes?.wallets) {
           // filter out system forwarder if present (0x9979...)
           const filtered = {

@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { eq, inArray } from "drizzle-orm";
+import { eq, inArray, desc } from "drizzle-orm";
 import { getDb } from "@/db";
 import { users, usernames, wallets, transfers, payCodes } from "@/db/schema";
 import { getSessionUserId } from "@/lib/session";
-import { desc } from "drizzle-orm";
+import { scanDirectDeposits } from "@/lib/depositWatcher";
 
 export const runtime = "nodejs";
 
@@ -23,6 +23,12 @@ export async function GET() {
   const myWallets = await db.query.wallets.findMany({
     where: eq(wallets.userId, userId),
   });
+
+  // auto-detect ANY direct deposits on Tempo → create transfer + email
+  try {
+    await scanDirectDeposits(db, userId);
+  } catch {}
+
   const incoming = await db.query.transfers.findMany({
     where: eq(transfers.toUserId, userId),
     orderBy: desc(transfers.createdAt),

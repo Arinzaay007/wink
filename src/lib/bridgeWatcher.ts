@@ -28,6 +28,7 @@ import {
   verifyArrivalOnTempo,
 } from "./tempo";
 import { normalizeHandle } from "./handles";
+import { notifyFundsReceived } from "./notify";
 
 /** Standard ERC-20 Transfer event (TIP-20 emits it too). */
 const TRANSFER_EVENT = {
@@ -193,21 +194,15 @@ export async function creditBridgeArrival(
     confirmedAt: new Date(),
   });
 
-  // notify recipient (email) — non-blocking, best-effort
-  try {
-    if (recipient.email) {
-      const { Resend } = await import("resend");
-      const resend = new Resend(process.env.RESEND_API_KEY || "");
-      const amount = (params.amountMicro / 1_000_000).toFixed(2);
-      const fromLabel = params.requestId ? `bridge:${params.chainName}` : params.chainName;
-      await resend.emails.send({
-        from: process.env.WINK_MAIL_FROM || "Wink <no-reply@winkpay.xyz>",
-        to: recipient.email,
-        subject: `You received $${amount} on Wink`,
-        html: `<p>You received <b>$${amount} USDC.e</b> from ${fromLabel} via ${params.chainName} → Tempo bridge.</p><p>To: @${params.handle} (${params.receiver.slice(0, 6)}…${params.receiver.slice(-4)})</p><p>Tx: <a href="https://explore.tempo.xyz/tx/${params.destTx}">${params.destTx.slice(0, 10)}…</a></p><p><a href="https://www.winkpay.xyz/wallet">View in wallet</a></p>`,
-      });
-    }
-  } catch {}
+  // notify — ANY funds drop (bridge is one type)
+  await notifyFundsReceived(db, {
+    toUserId: recipient.id,
+    amountMicro: params.amountMicro,
+    fromAddress: params.requestId ? `bridge:${params.chainName}` : params.chainName,
+    txHash: params.destTx,
+    chain: `${params.chainName} → Tempo`,
+    handle: params.handle,
+  });
 
   return { credited: true };
 }
