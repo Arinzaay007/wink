@@ -2,19 +2,8 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
-import { ArrowLeft, ArrowUpRight, Activity, TrendingUp, Wallet, Bot, Zap } from "lucide-react";
+import { ArrowLeft, ArrowRight, Wallet, Send, QrCode, Copy, Check } from "lucide-react";
 import { BgFx } from "@/components/BgFx";
-
-const MOCK_TX = [
-  { h: "@adaeze", kind: "agent", amt: 0.25, memo: "wk_mpp_a31b", t: "2m", chain: "Tempo" },
-  { h: "@cafe-mira", kind: "sale", amt: 2.5, memo: "INV-042", t: "5m", chain: "Tempo" },
-  { h: "@nik", kind: "wage", amt: 14, memo: "wk_req_b31c", t: "11m", chain: "Base → Tempo" },
-  { h: "@lina", kind: "wink", amt: 3, memo: "wk_a31b8e2c", t: "1h", chain: "Tempo" },
-  { h: "@marco", kind: "wink", amt: 5, memo: "wk_29b1ce42", t: "2h", chain: "Tempo" },
-  { h: "@eli", kind: "sale", amt: 12, memo: "INV-043", t: "3h", chain: "Optimism → Tempo" },
-  { h: "@sami", kind: "wink", amt: 10, memo: "wk_34a92b1d", t: "4h", chain: "Tempo" },
-  { h: "@studio-9", kind: "payroll", amt: 1200, memo: "wk_payroll_oct", t: "6h", chain: "Tempo" },
-];
 
 type Incoming = {
   id: string;
@@ -22,166 +11,196 @@ type Incoming = {
   amountMicro: number;
   memo?: string | null;
   fromAddress: string;
-  toAddress: string;
-  status: string;
-  createdAt: string;
   message?: string | null;
-  chain?: string;
-  txHash?: string | null;
+  createdAt: string;
+};
+
+type MeData = {
+  handles: string[];
+  incoming?: Incoming[];
+  user?: { displayName?: string };
 };
 
 export default function DashboardPage() {
-  const [real, setReal] = useState<Incoming[] | null>(null);
-  const [handles, setHandles] = useState<string[]>([]);
-  const [userLabel, setUserLabel] = useState("@adaeze");
-  const [balance, setBalance] = useState<string>("$842.15");
+  const [data, setData] = useState<MeData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     (async () => {
       try {
-        const res = await fetch("/api/me");
+        const res = await fetch("/api/me", { cache: "no-store" });
         if (!res.ok) throw new Error("unauth");
-        const data = await res.json();
-        if (data.handles?.length) {
-          setHandles(data.handles);
-          setUserLabel(`@${data.handles[0]}`);
-        }
-        if (data.incoming?.length) {
-          const mapped: Incoming[] = data.incoming.map((t: any) => ({
-            id: t.id,
-            kind: t.kind || "wink",
-            amountMicro: t.amountMicro,
-            memo: t.memo || t.invoiceRef || null,
-            fromAddress: t.fromAddress,
-            toAddress: t.toAddress,
-            status: t.status,
-            createdAt: t.createdAt,
-            message: t.message,
-            chain: t.chain || "Tempo",
-            txHash: t.txHash,
-          }));
-          setReal(mapped);
-          // calc total
-          const totalMicro = mapped.filter((m) => m.status === "confirmed").reduce((s, v) => s + v.amountMicro, 0);
-          setBalance(`$${(totalMicro / 1_000_000).toFixed(2)}`);
-        }
+        const json = await res.json();
+        setData(json);
       } catch {
-        // stay mock
+        setData(null);
       } finally {
         setLoading(false);
       }
     })();
   }, []);
 
-  const txs = real && real.length > 0 ? real : null;
-  const totalToday = txs ? txs.reduce((s, t) => s + t.amountMicro, 0) / 1_000_000 : 284.2;
-  const count = txs ? txs.length : 62;
+  const handle = data?.handles?.[0] || null;
+  const incoming = data?.incoming || [];
+  const totalMicro = incoming.reduce((s, t) => s + t.amountMicro, 0);
+  const totalFormatted = (totalMicro / 1_000_000).toFixed(2);
+  const todayMicro = incoming
+    .filter(t => {
+      const d = new Date(t.createdAt);
+      const now = new Date();
+      return d.toDateString() === now.toDateString();
+    })
+    .reduce((s, t) => s + t.amountMicro, 0);
+
+  const paymentLink = handle ? `https://winkpay.xyz/wink/${handle}` : "";
+
+  const copyLink = async () => {
+    if (!paymentLink) return;
+    await navigator.clipboard.writeText(paymentLink);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  if (loading) {
+    return (
+      <div className="relative">
+        <BgFx />
+        <div className="max-w-[1000px] mx-auto px-5 md:px-8 py-24 text-center">
+          <div className="text-mono text-[11px] text-[color:var(--color-ink-3)]">loading…</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!data || !handle) {
+    return (
+      <div className="relative">
+        <BgFx />
+        <div className="max-w-[1000px] mx-auto px-5 md:px-8 py-12">
+          <Link href="/" className="inline-flex items-center gap-1.5 text-sm text-[color:var(--color-ink-2)] hover:text-white transition mb-10">
+            <ArrowLeft size={14} /> back
+          </Link>
+          <div className="card p-10 text-center">
+            <div className="text-display text-3xl text-white">No handle yet</div>
+            <p className="mt-3 text-[14px] text-[color:var(--color-ink-2)] max-w-md mx-auto">Claim your @handle to start receiving payments. One name for every payment.</p>
+            <Link href="/claim" className="mt-6 inline-flex btn-primary !px-6 !py-3">Claim @handle <ArrowRight size={16} /></Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative">
       <BgFx variant="tight" />
-      <div className="max-w-[1400px] mx-auto px-5 md:px-8 py-12 md:py-16">
+      <div className="max-w-[1000px] mx-auto px-5 md:px-8 py-12 md:py-16">
         <Link href="/" className="inline-flex items-center gap-1.5 text-sm text-[color:var(--color-ink-2)] hover:text-white transition mb-10">
           <ArrowLeft size={14} /> back
         </Link>
 
-        <div className="flex items-end justify-between flex-wrap gap-6 mb-12">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
           <div>
-            <div className="chip chip-red mb-5"><Activity size={11} /> /dashboard · {userLabel}</div>
-            <h1 className="text-display text-[56px] sm:text-[72px] leading-[0.92] tracking-[-0.04em]">
-              <span className="text-white">Today</span><br />
-              <em className="italic font-light text-[color:var(--color-ink-2)]">on your</em> <span className="neon-text italic font-light">rails</span><span className="text-[color:var(--color-neon)]">.</span>
+            <h1 className="text-display text-[44px] sm:text-[56px] leading-[0.9] tracking-[-0.04em]">
+              <span className="text-white">@{handle}</span>
             </h1>
-            {handles.length > 0 && <div className="mt-3 text-mono text-[11px] text-[color:var(--color-ink-3)]">handles: {handles.map((h) => `@${h}`).join(" · ")}</div>}
+            <p className="mt-2 text-[14px] text-[color:var(--color-ink-2)]">Your payments, one place.</p>
           </div>
-          <div className="flex items-center gap-2 text-mono text-[10px] uppercase tracking-[0.16em] text-[color:var(--color-ink-3)]"><span className="dot-live" /> synced · tempo · 42431 · block 1,284,902</div>
+          <div className="flex gap-2">
+            <Link href="/wallet" className="btn-ghost !py-2.5 !px-4 !text-[13px] border border-[color:var(--color-line)]">
+              <Wallet size={14} /> Wallet
+            </Link>
+            <Link href={`/wink/${handle}`} className="btn-ghost !py-2.5 !px-4 !text-[13px]">
+              <QrCode size={14} /> My link
+            </Link>
+          </div>
         </div>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-10">
-          {[
-            { label: "received today", v: `$${totalToday.toFixed(2)}`, d: txs ? `${count} confirmed` : "+$42 vs yesterday", trend: "up" },
-            { label: "winks", v: `${count}`, d: txs ? "on-chain verified" : "23 unique senders", trend: "up" },
-            { label: "balance", v: balance, d: "pathUSD · tempo", trend: "—" },
-            { label: "agents paid you", v: txs ? `${txs.filter((t) => t.kind === "agent").length}` : "8", d: "MPP · $0.25 each", trend: "up" },
-          ].map((k, i) => (
-            <motion.div key={k.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className="card p-6">
-              <div className="text-mono text-[10px] uppercase tracking-[0.18em] text-[color:var(--color-ink-3)] mb-2.5">{k.label}</div>
-              <div className="text-display text-3xl text-white">{k.v}</div>
-              <div className="flex items-center gap-1.5 mt-2 text-[11px] text-[color:var(--color-ink-2)]">{k.trend === "up" && <TrendingUp size={12} className="text-[color:var(--color-neon)]" />}{k.d}</div>
-            </motion.div>
-          ))}
+        <div className="grid sm:grid-cols-3 gap-3 mb-8">
+          <div className="card p-6">
+            <div className="text-mono text-[10px] uppercase tracking-[0.18em] text-[color:var(--color-ink-3)] mb-2">total received</div>
+            <div className="text-display text-3xl text-white">${totalFormatted}</div>
+            <div className="text-[11px] text-[color:var(--color-ink-2)] mt-1">{incoming.length} payments</div>
+          </div>
+          <div className="card p-6">
+            <div className="text-mono text-[10px] uppercase tracking-[0.18em] text-[color:var(--color-ink-3)] mb-2">today</div>
+            <div className="text-display text-3xl text-white">${(todayMicro / 1_000_000).toFixed(2)}</div>
+            <div className="text-[11px] text-[color:var(--color-ink-2)] mt-1">pathUSD</div>
+          </div>
+          <div className="card p-6 bg-[color:var(--color-neon-soft)] border-[rgba(255,31,61,0.2)]">
+            <div className="text-mono text-[10px] uppercase tracking-[0.18em] text-[color:var(--color-ink-3)] mb-2">payment link</div>
+            <div className="font-mono text-[12px] text-white truncate">{paymentLink}</div>
+            <button onClick={copyLink} className="mt-3 btn-primary !py-2 !px-3 !text-[11px] w-full justify-center">
+              {copied ? <><Check size={12} /> Copied</> : <><Copy size={12} /> Copy link</>}
+            </button>
+          </div>
         </div>
 
-        <div className="grid lg:grid-cols-[1.4fr_0.6fr] gap-6">
+        <div className="grid lg:grid-cols-[1.6fr_0.9fr] gap-6">
           <div>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-display text-2xl text-white">live ledger {loading && <span className="text-mono text-[10px] text-[color:var(--color-ink-3)] ml-2">loading…</span>}</h2>
-              <a href="https://explorer.tempo.xyz" target="_blank" className="text-[12px] text-mono uppercase tracking-[0.16em] text-[color:var(--color-ink-3)] hover:text-white inline-flex items-center gap-1">explorer <ArrowUpRight size={11} /></a>
+              <h2 className="text-display text-xl text-white">Recent payments</h2>
+              <Link href="/wallet" className="text-[12px] text-[color:var(--color-ink-3)] hover:text-white">View wallet →</Link>
             </div>
 
             <div className="card overflow-hidden">
-              <div className="grid grid-cols-[80px_1fr_110px_130px_90px] gap-px bg-[color:var(--color-line)] text-mono text-[10px] uppercase tracking-[0.16em] text-[color:var(--color-ink-3)]">
-                {["kind", "from", "amount", "memo", "when"].map((h, i) => (<div key={i} className="bg-[color:var(--color-surface)] px-4 py-3">{h}</div>))}
-              </div>
-              <div className="divide-y divide-[color:var(--color-line)]">
-                {txs ? txs.slice(0, 20).map((t, i) => (
-                  <motion.div key={t.id} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.03 }} className="grid grid-cols-[80px_1fr_110px_130px_90px] gap-px text-[13px] items-center hover:bg-white/[0.02] transition">
-                    <div className="px-4 py-3"><span className={`inline-flex px-2 py-0.5 rounded-md text-[9px] uppercase tracking-[0.14em] ${t.kind === "wink" ? "bg-[color:var(--color-neon-soft)] text-[color:var(--color-neon)] border border-[rgba(255,31,61,0.3)]" : "bg-white/5 text-white border border-[color:var(--color-line)]"}`}>{t.kind}</span></div>
-                    <div className="px-4 py-3"><div className="text-white text-[13px] font-mono text-[11px]">{t.fromAddress.slice(0, 10)}…</div><div className="text-[10px] text-[color:var(--color-ink-3)] font-mono mt-0.5">via {t.chain}</div></div>
-                    <div className="px-4 py-3 font-mono text-[color:var(--color-neon)]">+${(t.amountMicro / 1_000_000).toFixed(2)}</div>
-                    <div className="px-4 py-3 font-mono text-[11px] text-[color:var(--color-ink-2)] truncate">{t.memo || t.message || "—"}</div>
-                    <div className="px-4 py-3 text-mono text-[11px] text-[color:var(--color-ink-3)]">{new Date(t.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>
-                  </motion.div>
-                )) : MOCK_TX.map((t, i) => (
-                  <motion.div key={i} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.03 }} className="grid grid-cols-[80px_1fr_110px_130px_90px] gap-px text-[13px] items-center hover:bg-white/[0.02] transition">
-                    <div className="px-4 py-3"><span className={`inline-flex px-2 py-0.5 rounded-md text-[9px] uppercase tracking-[0.14em] ${t.kind === "wink" ? "bg-[color:var(--color-neon-soft)] text-[color:var(--color-neon)] border border-[rgba(255,31,61,0.3)]" : "bg-white/5 text-white border border-[color:var(--color-line)]"}`}>{t.kind}</span></div>
-                    <div className="px-4 py-3"><div className="text-white text-[13px]">{t.h}</div><div className="text-[10px] text-[color:var(--color-ink-3)] font-mono mt-0.5">via {t.chain}</div></div>
-                    <div className="px-4 py-3 font-mono text-[color:var(--color-neon)]">+${t.amt.toFixed(2)}</div>
-                    <div className="px-4 py-3 font-mono text-[11px] text-[color:var(--color-ink-2)] truncate">{t.memo}</div>
-                    <div className="px-4 py-3 text-mono text-[11px] text-[color:var(--color-ink-3)]">{t.t}</div>
-                  </motion.div>
-                ))}
-              </div>
-              {!txs && <div className="p-4 text-center text-mono text-[11px] text-[color:var(--color-ink-3)]">Sign in to see your real ledger — showing demo data. <Link href="/claim" className="text-[color:var(--color-neon)]">Claim handle →</Link></div>}
+              {incoming.length === 0 ? (
+                <div className="p-10 text-center">
+                  <div className="w-12 h-12 rounded-full bg-white/[0.04] border border-[color:var(--color-line)] flex items-center justify-center mx-auto mb-4">
+                    <Send size={18} className="text-[color:var(--color-ink-3)]" />
+                  </div>
+                  <div className="text-white font-medium">No payments yet</div>
+                  <p className="text-[13px] text-[color:var(--color-ink-2)] mt-1 max-w-sm mx-auto">Share your link <span className="text-white font-mono">{paymentLink}</span> — anyone can pay you from any chain.</p>
+                  <div className="mt-5 flex gap-2 justify-center">
+                    <button onClick={copyLink} className="btn-primary !py-2 !text-[12px]"><Copy size={12} /> Copy link</button>
+                    <Link href={`/wink/${handle}`} className="btn-ghost !py-2 !text-[12px]">Open my page</Link>
+                  </div>
+                </div>
+              ) : (
+                <div className="divide-y divide-[color:var(--color-line)]">
+                  {incoming.slice(0, 20).map((t, i) => (
+                    <motion.div key={t.id} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.02 }} className="flex items-center gap-4 p-4 hover:bg-white/[0.02] transition">
+                      <div className="w-9 h-9 rounded-full bg-[color:var(--color-neon-soft)] border border-[color:var(--color-neon)]/20 flex items-center justify-center shrink-0">
+                        <span className="text-[color:var(--color-neon)] text-[13px] font-medium">$</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-white text-[14px] font-medium">+${(t.amountMicro / 1_000_000).toFixed(2)}</span>
+                          <span className="text-[11px] text-[color:var(--color-ink-3)] font-mono">{new Date(t.createdAt).toLocaleDateString()} {new Date(t.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+                        </div>
+                        <div className="text-[12px] text-[color:var(--color-ink-2)] truncate mt-0.5">{t.message || t.memo || "Payment"}</div>
+                      </div>
+                      <div className="text-mono text-[10px] text-[color:var(--color-ink-3)]">{t.fromAddress.slice(0, 6)}…</div>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
-          <div className="space-y-6">
-            <div className="card-red p-6 relative overflow-hidden">
-              <div aria-hidden className="absolute -top-20 -right-20 w-48 h-48 rounded-full" style={{ background: "radial-gradient(circle, rgba(255,31,61,0.4), transparent 70%)" }} />
-              <div className="relative">
-                <div className="flex items-center justify-between mb-5"><div className="text-mono text-[10px] uppercase tracking-[0.18em] text-[color:var(--color-ink-3)]">balance</div><Wallet size={14} className="text-[color:var(--color-neon)]" /></div>
-                <div className="text-display text-[44px] text-white leading-none">{balance.split(".")[0]}<span className="text-[color:var(--color-ink-3)] text-2xl">.{balance.split(".")[1] || "00"}</span></div>
-                <div className="text-mono text-[11px] text-[color:var(--color-ink-3)] mt-2">pathUSD · tempo · live from chain</div>
-                <div className="mt-6 grid grid-cols-2 gap-2"><Link href="/wink/demo" className="btn-primary !py-2.5 !text-[12px] text-center">Send</Link><Link href="/pay" className="btn-ghost !py-2.5 !text-[12px] text-center">Receive</Link></div>
+          <div className="space-y-4">
+            <div className="card p-6">
+              <h3 className="text-display text-lg text-white mb-1">Get paid</h3>
+              <p className="text-[12px] text-[color:var(--color-ink-2)] leading-relaxed">Share your @handle or payment link. Works from Base, Ethereum, Arbitrum, Optimism, Polygon → Tempo.</p>
+              <div className="mt-4 space-y-2">
+                <Link href={`/wink/${handle}`} className="btn-primary w-full justify-center !py-3 !text-[13px]">Open my pay page</Link>
+                <button onClick={copyLink} className="btn-ghost w-full justify-center !py-3 !text-[13px] border border-[color:var(--color-line)]">
+                  <Copy size={14} /> {copied ? "Copied!" : "Copy link"}
+                </button>
               </div>
             </div>
 
-            <div className="card p-6">
-              <div className="text-mono text-[10px] uppercase tracking-[0.18em] text-[color:var(--color-ink-3)] mb-4">top senders · 7d</div>
-              <div className="space-y-3">
-                {[
-                  { h: "@cafe-mira", amt: "$48.20" },
-                  { h: "@nik", amt: "$42.00" },
-                  { h: "@studio-9", amt: "$28.50" },
-                  { h: "@ada", amt: "$15.00" },
-                ].map((s, i) => (
-                  <div key={s.h} className="flex items-center gap-3"><div className="text-mono text-[10px] text-[color:var(--color-ink-3)] w-5">0{i + 1}</div><div className="flex-1 text-white text-[13px]">{s.h}</div><div className="text-mono text-[11px] text-[color:var(--color-neon)]">{s.amt}</div></div>
-                ))}
-              </div>
-            </div>
-
-            <div className="card p-6">
-              <div className="flex items-center justify-between mb-4"><div className="text-mono text-[10px] uppercase tracking-[0.18em] text-[color:var(--color-ink-3)]">agent activity</div><Bot size={14} className="text-[color:var(--color-neon)]" /></div>
-              <div className="space-y-3">
-                {[
-                  { h: "gpt-researcher", w: "@adaeze", t: "8m", v: "$0.25" },
-                  { h: "scraper-bot", w: "@adaeze", t: "23m", v: "$0.25" },
-                  { h: "image-bot", w: "@adaeze", t: "1h", v: "$0.25" },
-                ].map((a) => (
-                  <div key={a.h} className="flex items-center gap-3 text-[12px]"><Zap size={11} className="text-[color:var(--color-neon)]" /><span className="text-white font-mono">{a.h}</span><ArrowUpRight size={10} className="text-[color:var(--color-ink-3)]" /><span className="text-[color:var(--color-ink-2)]">{a.w}</span><span className="ml-auto text-mono text-[10px] text-[color:var(--color-ink-3)]">{a.v} · {a.t}</span></div>
-                ))}
+            <div className="card p-5">
+              <div className="text-mono text-[10px] uppercase tracking-[0.18em] text-[color:var(--color-ink-3)] mb-3">quick actions</div>
+              <div className="space-y-2">
+                <Link href="/wallet" className="flex items-center justify-between p-3 rounded-xl bg-black border border-[color:var(--color-line)] hover:border-[color:var(--color-line-2)] transition">
+                  <span className="text-[13px] text-white flex items-center gap-2"><Send size={14} /> Send payment</span>
+                  <ArrowRight size={14} className="text-[color:var(--color-ink-3)]" />
+                </Link>
+                <Link href="/wallet" className="flex items-center justify-between p-3 rounded-xl bg-black border border-[color:var(--color-line)] hover:border-[color:var(--color-line-2)] transition">
+                  <span className="text-[13px] text-white flex items-center gap-2"><QrCode size={14} /> Receive</span>
+                  <ArrowRight size={14} className="text-[color:var(--color-ink-3)]" />
+                </Link>
               </div>
             </div>
           </div>
