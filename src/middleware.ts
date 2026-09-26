@@ -14,6 +14,14 @@ export function middleware(req: NextRequest) {
   const { pathname, searchParams } = req.nextUrl;
   const hostname = req.headers.get("host") || "";
 
+  // canonical: always use www.winkpay.xyz for apex requests (fixes NG ISP blocking apex A record)
+  if (hostname === "winkpay.xyz") {
+    const url = req.nextUrl.clone();
+    url.hostname = "www.winkpay.xyz";
+    url.protocol = "https:";
+    return NextResponse.redirect(url, 308);
+  }
+
   // owner bypass cookie set via ?admin=TOKEN (kept for team)
   const adminQuery = searchParams.get("admin");
   if (adminQuery === BYPASS_TOKEN) {
