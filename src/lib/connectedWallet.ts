@@ -72,6 +72,16 @@ export async function connectInjectedWallet(): Promise<Address> {
   return accounts[0];
 }
 
+export async function connectWalletAnyChain(): Promise<Address> {
+  const eth = window.ethereum;
+  if (!eth) throw new Error("No wallet found — install MetaMask, Rabby, or Tempo Wallet");
+  const accounts = (await eth.request({
+    method: "eth_requestAccounts",
+  })) as `0x${string}`[];
+  if (!accounts?.length) throw new Error("No account authorized");
+  return accounts[0];
+}
+
 /** Wallet client bound to the injected provider (signing in the user's wallet UI). */
 export function injectedWalletClient(address: Address) {
   if (!window.ethereum) throw new Error("No injected wallet");

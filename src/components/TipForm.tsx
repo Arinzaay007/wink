@@ -22,6 +22,7 @@ import {
 import {
   hasInjectedWallet,
   connectInjectedWallet,
+  connectWalletAnyChain,
   injectedWalletClient,
 } from "@/lib/connectedWallet";
 import { PATH_USD, TIP20_ABI } from "@/lib/tempo";
@@ -102,7 +103,8 @@ export default function TipForm({
     setError(null);
     setConnecting(true);
     try {
-      const addr = await connectInjectedWallet();
+      // for Tempo direct, force switch to Tempo; for any-chain, connect without switch
+      const addr = isTempo ? await connectInjectedWallet() : await connectWalletAnyChain();
       setOwnAddr(addr);
       setUseOwn(true);
       setBalance(await fetchBalance(addr));
