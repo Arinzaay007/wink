@@ -1,9 +1,11 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Receipt, Plus, Copy, Check, QrCode } from "lucide-react";
+import { ArrowLeft, Receipt, Plus, Copy, Check, QrCode, ScanLine } from "lucide-react";
 import { BgFx } from "@/components/BgFx";
 import QRCode from "qrcode";
+import QrScanner from "@/components/QrScanner";
+import { useRouter } from "next/navigation";
 
 type PayCode = {
   id: string;
@@ -36,6 +38,8 @@ export default function PayPage() {
   const [note, setNote] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
+  const [showScanner, setShowScanner] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     (async () => {
@@ -86,13 +90,34 @@ export default function PayPage() {
     setTimeout(() => setCopied(null), 2000);
   };
 
+  const handleScan = (text: string) => {
+    setShowScanner(false);
+    try {
+      if (text.includes("winkpay.xyz")) {
+        const u = new URL(text.startsWith("http") ? text : `https://${text}`);
+        router.push(u.pathname + u.search);
+        return;
+      }
+      const h = text.replace(/^@/, "").trim();
+      if (h) router.push(`/pay/${h}`);
+    } catch {
+      router.push(`/pay/${text.replace(/^@/, "")}`);
+    }
+  };
+
   return (
     <div className="relative">
       <BgFx />
+      {showScanner && <QrScanner onScan={handleScan} onClose={() => setShowScanner(false)} />}
       <div className="max-w-[1100px] mx-auto px-5 md:px-8 py-12 md:py-16">
-        <Link href="/" className="inline-flex items-center gap-1.5 text-sm text-[color:var(--color-ink-2)] hover:text-white transition mb-10">
-          <ArrowLeft size={14} /> back
-        </Link>
+        <div className="flex items-center justify-between mb-10">
+          <Link href="/" className="inline-flex items-center gap-1.5 text-sm text-[color:var(--color-ink-2)] hover:text-white transition">
+            <ArrowLeft size={14} /> back
+          </Link>
+          <button onClick={() => setShowScanner(true)} className="text-[11px] font-mono uppercase tracking-[0.16em] text-[color:var(--color-ink-3)] hover:text-[color:var(--color-neon)] border border-[color:var(--color-line)] rounded-full px-3 py-1.5 flex items-center gap-1.5">
+            <ScanLine size={12} /> Scan QR
+          </button>
+        </div>
 
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
           <div>

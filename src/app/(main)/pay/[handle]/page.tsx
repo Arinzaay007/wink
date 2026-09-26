@@ -1,11 +1,12 @@
 "use client";
 import Link from "next/link";
-import { useParams, useSearchParams } from "next/navigation";
+import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Receipt, ShieldCheck, Copy, Check } from "lucide-react";
+import { ArrowLeft, Receipt, ShieldCheck, Copy, Check, ScanLine } from "lucide-react";
 import { BgFx } from "@/components/BgFx";
 import TipForm from "@/components/TipForm";
 import QRCode from "qrcode";
+import QrScanner from "@/components/QrScanner";
 
 function QrImg({ text, size = 180 }: { text: string; size?: number }) {
   const [url, setUrl] = useState<string | null>(null);
@@ -21,12 +22,14 @@ function QrImg({ text, size = 180 }: { text: string; size?: number }) {
 export default function PayHandlePage() {
   const routeParams = useParams() as { handle?: string };
   const search = useSearchParams();
+  const router = useRouter();
   const rawHandle = (routeParams.handle || "cafe-mira").replace(/^@/, "");
   const handle = rawHandle.toLowerCase();
   const code = search.get("code") || undefined;
   const amountParam = search.get("amount");
 
   const [copied, setCopied] = useState(false);
+  const [showScanner, setShowScanner] = useState(false);
   const payLink = `https://winkpay.xyz/pay/${handle}${code ? `?code=${code}` : ""}`;
   const winkLink = `https://winkpay.xyz/wink/${handle}`;
 
@@ -36,13 +39,40 @@ export default function PayHandlePage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleScan = (text: string) => {
+    setShowScanner(false);
+    // if scanned link is winkpay URL, navigate to it
+    try {
+      if (text.includes("winkpay.xyz")) {
+        const u = new URL(text.startsWith("http") ? text : `https://${text}`);
+        router.push(u.pathname + u.search);
+        return;
+      }
+      // if 0x address, go to wallet send? for now go to wallet
+      if (text.startsWith("0x") && text.length === 42) {
+        router.push(`/wallet?scan=${text}`);
+        return;
+      }
+      // handle
+      const h = text.replace(/^@/, "").trim();
+      if (h) router.push(`/pay/${h}`);
+    } catch {
+      router.push(`/pay/${text.replace(/^@/, "")}`);
+    }
+  };
+
   return (
     <div className="relative">
       <BgFx />
       <div className="max-w-[1100px] mx-auto px-5 md:px-8 py-12 md:py-16">
-        <Link href="/" className="inline-flex items-center gap-1.5 text-sm text-[color:var(--color-ink-2)] hover:text-white transition mb-10">
-          <ArrowLeft size={14} /> back
-        </Link>
+        <div className="flex items-center justify-between mb-10">
+          <Link href="/" className="inline-flex items-center gap-1.5 text-sm text-[color:var(--color-ink-2)] hover:text-white transition">
+            <ArrowLeft size={14} /> back
+          </Link>
+          <button onClick={() => setShowScanner(true)} className="text-[11px] font-mono uppercase tracking-[0.16em] text-[color:var(--color-ink-3)] hover:text-[color:var(--color-neon)] border border-[color:var(--color-line)] rounded-full px-3 py-1.5 flex items-center gap-1.5">
+            <ScanLine size={12} /> Scan QR
+          </button>
+        </div>
 
         <div className="grid lg:grid-cols-[1.1fr_0.9fr] gap-10 lg:gap-16 items-start">
           <div>
@@ -101,6 +131,7 @@ export default function PayHandlePage() {
           </div>
         </div>
       </div>
+      {showScanner && <QrScanner onScan={handleScan} onClose={() => setShowScanner(false)} />}
     </div>
   );
 }
