@@ -1,5 +1,5 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -23,8 +23,27 @@ export default function ClaimPage() {
   const [error, setError] = useState<string | null>(null);
   const [claimed, setClaimed] = useState<string | null>(null);
   const [claimedWallet, setClaimedWallet] = useState<string | null>(null);
+  const [checkingAuth, setCheckingAuth] = useState(true);
 
   const normalized = useMemo(() => normalizeHandle(handle), [handle]);
+
+  // if user already has handle, redirect to dashboard — claim page is for new users only
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch("/api/me");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.handles && data.handles.length > 0) {
+            // already has handle — send to dashboard, not claim again
+            router.replace("/dashboard");
+            return;
+          }
+        }
+      } catch {}
+      setCheckingAuth(false);
+    })();
+  }, [router]);
 
   const checkAvailability = async (h: string) => {
     const v = normalizeHandle(h);
@@ -101,6 +120,17 @@ export default function ClaimPage() {
       setSubmitting(false);
     }
   };
+
+  if (checkingAuth) {
+    return (
+      <div className="relative">
+        <BgFx />
+        <div className="max-w-[1200px] mx-auto px-5 md:px-8 py-24 text-center">
+          <div className="text-mono text-[11px] text-[color:var(--color-ink-3)]">checking session…</div>
+        </div>
+      </div>
+    );
+  }
 
   if (claimed) {
     const displayWallet = claimedWallet || (typeof window !== "undefined" ? loadDemoWallet()?.address : null);
