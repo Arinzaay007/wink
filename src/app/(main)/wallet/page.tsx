@@ -486,20 +486,61 @@ export default function WalletPage() {
             {/* stranded */}
             {hasStranded && (
               <div className="card p-6">
-                <div className="text-mono text-[10px] uppercase tracking-[0.18em] text-[color:var(--color-ink-3)] mb-3">stranded USDC detected</div>
-                {data?.wallets.map(w => w.stranded.length > 0 && (
-                  <div key={w.address} className="space-y-2">
-                    {w.stranded.map(s => (
+                <div className="text-mono text-[10px] uppercase tracking-[0.18em] text-[color:var(--color-ink-3)] mb-3">stranded USDC detected — tap Forward to bring to Tempo</div>
+                {data?.wallets.map((w:any) => w.stranded.length > 0 && (
+                  <div key={w.address} className="space-y-2 mb-3">
+                    <div className="text-[11px] text-ink-500 font-mono">{w.address.slice(0,6)}…{w.address.slice(-4)}</div>
+                    {w.stranded.map((s:any) => (
                       <div key={s.chainId} className="flex items-center gap-3 text-[13px] bg-black border border-[color:var(--color-line)] rounded-xl px-4 py-3">
                         <Globe2 size={12} className="text-[color:var(--color-neon)]" />
                         <span className="text-white">{s.chain}</span>
-                        <span className="text-mono text-[11px] text-[color:var(--color-ink-2)]">USDC ${s.usdc}</span>
-                        <span className="ml-auto text-[10px] uppercase tracking-[0.16em] px-2 py-0.5 rounded-full border border-[color:var(--color-neon)] text-[color:var(--color-neon)] bg-[color:var(--color-neon-soft)]">will auto-forward</span>
+                        <span className="text-mono text-[11px] text-[color:var(--color-ink-2)]">USDC ${s.usdc} · {s.eth} ETH</span>
+                        <button
+                          onClick={async () => {
+                            try {
+                              if (!ownAddr) {
+                                setSendError("Connect wallet first (same address) to forward");
+                                await connectOwnWallet();
+                                return;
+                              }
+                              if (ownAddr.toLowerCase() !== w.address.toLowerCase()) {
+                                setSendError(`Switch wallet to ${w.address.slice(0,6)}… to forward its ${s.chain} USDC`);
+                                return;
+                              }
+                              setSending(true);
+                              const amountMicro = Math.round(parseFloat(s.usdc) * 1_000_000);
+                              const quoteRes = await fetch("/api/bridge/quote", {
+                                method: "POST",
+                                headers: { "content-type": "application/json" },
+                                credentials: "include",
+                                body: JSON.stringify({ handle: handle || "test1", sender: w.address, sourceChainId: s.chainId, amountMicro }),
+                              }).then(r=>r.json());
+                              if (!quoteRes.steps) throw new Error(quoteRes.error || "quote failed");
+                              const eth = (window as any).ethereum;
+                              if (!eth) throw new Error("No wallet");
+                              try { await eth.request({ method: "wallet_switchEthereumChain", params: [{ chainId: `0x${s.chainId.toString(16)}` }] }); } catch {}
+                              for (const step of quoteRes.steps) {
+                                for (const item of step.items) {
+                                  const d = item.data as any;
+                                  if (!d?.to) continue;
+                                  await eth.request({ method: "eth_sendTransaction", params: [{ from: w.address, to: d.to, data: d.data, value: d.value || "0x0" }] });
+                                  await new Promise(r=>setTimeout(r, 1500));
+                                }
+                              }
+                              setSendStage("done");
+                            } catch (e) {
+                              setSendError(e instanceof Error ? e.message : String(e));
+                            } finally { setSending(false); }
+                          }}
+                          className="ml-auto text-[10px] uppercase tracking-[0.16em] px-2.5 py-1 rounded-full bg-wink text-white hover:bg-wink/80"
+                        >
+                          Forward to Tempo
+                        </button>
                       </div>
                     ))}
                   </div>
                 ))}
-                <div className="mt-3 text-[11px] text-[color:var(--color-ink-3)]">Any USDC sent to your address on Base/Eth/Arb/Op/Poly auto-forwards to pathUSD on Tempo via Relay.</div>
+                <div className="mt-3 text-[11px] text-[color:var(--color-ink-3)]">USDC on Base/Arb lands there, not Tempo. Connect same wallet and tap Forward — it bridges via Relay to pathUSD on Tempo. You have gas: check ETH balance.</div>
               </div>
             )}
 
