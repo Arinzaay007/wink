@@ -90,7 +90,7 @@ export default function WalletPage() {
   }, []);
 
   const handle = me?.handles?.[0] || null;
-  const paymentLink = handle ? `https://winkpay.xyz/wink/${handle}` : `https://winkpay.xyz/wink/demo`;
+  const paymentLink = handle ? `https://www.winkpay.xyz/wink/${handle}` : `https://www.winkpay.xyz/wink/demo`;
 
   const copy = async (text: string, setter: (v: boolean) => void) => {
     try {

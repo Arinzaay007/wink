@@ -30,8 +30,8 @@ export default function PayHandlePage() {
 
   const [copied, setCopied] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
-  const payLink = `https://winkpay.xyz/pay/${handle}${code ? `?code=${code}` : ""}`;
-  const winkLink = `https://winkpay.xyz/wink/${handle}`;
+  const payLink = `https://www.winkpay.xyz/pay/${handle}${code ? `?code=${code}` : ""}`;
+  const winkLink = `https://www.winkpay.xyz/wink/${handle}`;
 
   const copy = async () => {
     await navigator.clipboard.writeText(payLink);

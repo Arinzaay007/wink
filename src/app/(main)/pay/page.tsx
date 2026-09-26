@@ -55,8 +55,8 @@ export default function PayPage() {
   }, []);
 
   const handle = me?.handles?.[0] || null;
-  const baseLink = handle ? `https://winkpay.xyz/wink/${handle}` : "https://winkpay.xyz/wink/demo";
-  const payLink = handle ? `https://winkpay.xyz/pay/${handle}` : "https://winkpay.xyz/pay/demo";
+  const baseLink = handle ? `https://www.winkpay.xyz/wink/${handle}` : "https://www.winkpay.xyz/wink/demo";
+  const payLink = handle ? `https://www.winkpay.xyz/pay/${handle}` : "https://www.winkpay.xyz/pay/demo";
 
   const createCode = async () => {
     setError(null);
@@ -198,7 +198,7 @@ export default function PayPage() {
                 ) : (
                   <div className="grid sm:grid-cols-2 gap-3">
                     {codes.map(c => {
-                      const link = `https://winkpay.xyz/pay/${handle}?code=${c.slug}&amount=${c.amountMicro ? (c.amountMicro/1_000_000).toFixed(2) : ""}`;
+                      const link = `https://www.winkpay.xyz/pay/${handle}?code=${c.slug}&amount=${c.amountMicro ? (c.amountMicro/1_000_000).toFixed(2) : ""}`;
                       return (
                         <div key={c.id} className="card p-4">
                           <div className="flex justify-center mb-3">

@@ -37,7 +37,7 @@ export async function POST(req: Request) {
           from,
           to: email,
           subject: "You're on the Wink waitlist 😉",
-          html: `<p style="font-family:Georgia,serif;font-size:16px">You're in.</p><p style="color:#777;font-size:13px">Wink is the name layer for payments — pay a @username, any chain in, Tempo out. We'll email you when your invite is ready.</p><p style="color:#777;font-size:12px">— Wink Team<br/>https://winkpay.xyz</p>`,
+          html: `<p style="font-family:Georgia,serif;font-size:16px">You're in.</p><p style="color:#777;font-size:13px">Wink is the name layer for payments — pay a @username, any chain in, Tempo out. We'll email you when your invite is ready.</p><p style="color:#777;font-size:12px">— Wink Team<br/>https://www.winkpay.xyz</p>`,
         }),
       }).catch(() => {});
     }

@@ -53,7 +53,7 @@ export default function DashboardPage() {
     })
     .reduce((s, t) => s + t.amountMicro, 0);
 
-  const paymentLink = handle ? `https://winkpay.xyz/wink/${handle}` : "";
+  const paymentLink = handle ? `https://www.winkpay.xyz/wink/${handle}` : "";
 
   const copyLink = async () => {
     if (!paymentLink) return;

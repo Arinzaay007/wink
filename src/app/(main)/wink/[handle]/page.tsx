@@ -52,7 +52,7 @@ export default function WinkPage() {
             </h1>
             <p className="mt-6 text-[color:var(--color-ink-2)] max-w-md leading-relaxed">
               {exists === false
-                ? `Handle @${cleanHandle} doesn't exist yet — it was wiped when we reset DB. Claim it to make winkpay.xyz/wink/${cleanHandle} work.`
+                ? `Handle @${cleanHandle} doesn't exist yet — it was wiped when we reset DB. Claim it to make www.winkpay.xyz/wink/${cleanHandle} work.`
                 : "Memo-reconciled, settled as pathUSD. Recipient gets full amount — sender pays ~$0.008 network fee. Works with any wallet, any chain, all settles on Tempo."}
             </p>
 
@@ -65,7 +65,7 @@ export default function WinkPage() {
                     <Link href={`/claim?admin=wink-admin-2026`} className="btn-primary !py-2.5 !px-5">Claim @{cleanHandle}</Link>
                     <Link href="/claim?admin=wink-admin-2026" className="btn-ghost !py-2.5 !px-5">Claim any handle</Link>
                   </div>
-                  <div className="mt-4 text-[11px] text-[color:var(--color-ink-3)]">Current handles in DB: test1 (1 total). After claim, winkpay.xyz/wink/{cleanHandle} works on apex and www, no www needed.</div>
+                  <div className="mt-4 text-[11px] text-[color:var(--color-ink-3)]">Current handles in DB: test1 (1 total). After claim, www.winkpay.xyz/wink/{cleanHandle} works on apex and www, no www needed.</div>
                 </div>
               ) : (
                 <>

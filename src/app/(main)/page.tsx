@@ -80,7 +80,7 @@ export default function HomePage() {
             <div className="card p-7">
               <div className="flex items-center gap-2 mb-3"><ScanLine size={16} className="text-[color:var(--color-neon)]" /><span className="text-mono text-[10px] uppercase tracking-[0.18em] text-[color:var(--color-ink-3)]">scan to pay</span></div>
               <h3 className="text-display text-2xl text-white">Scan any QR to pay</h3>
-              <p className="text-[13px] text-[color:var(--color-ink-2)] mt-2">Wallet has Scan button — uses camera, parses winkpay.xyz/wink/@handle, /pay/@handle, or 0x address. No app needed.</p>
+              <p className="text-[13px] text-[color:var(--color-ink-2)] mt-2">Wallet has Scan button — uses camera, parses www.winkpay.xyz/wink/@handle, /pay/@handle, or 0x address. No app needed.</p>
               <Link href="/wallet" className="mt-4 inline-flex btn-ghost !py-2.5 !text-[12px]">Open wallet → Scan</Link>
             </div>
             <div className="card p-7">

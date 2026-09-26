@@ -19,7 +19,7 @@ const mono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://winkpay.xyz"),
+  metadataBase: new URL("https://www.winkpay.xyz"),
   title: "Wink — anyone, anywhere, paid with a wink",
   description:
     "The name layer for payments. Pay @usernames — tips, checkout, payroll, and AI agents. All settling as pathUSD on Tempo in under a second.",
@@ -31,7 +31,7 @@ export const metadata: Metadata = {
     title: "Wink — anyone, anywhere, paid with a wink",
     description:
       "The name layer for payments. Pay @usernames — tips, checkout, payroll, and AI agents. Settled as pathUSD on Tempo in under a second. 0% platform fee.",
-    url: "https://winkpay.xyz",
+    url: "https://www.winkpay.xyz",
     siteName: "Wink",
     images: [
       {
