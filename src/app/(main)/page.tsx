@@ -378,13 +378,6 @@ export default function Home() {
             <div className="space-y-3">
               {[
                 {
-                  tag: "AUTO-FORWARD · MAINNET",
-                  title: "Base $1.00 → $0.974756 pathUSD",
-                  sub: "Burner 0x9979Df52… · Relay · Block 41099471 · real funds",
-                  hash: "0x343d51… + 0x113e64…",
-                  kind: "bridge",
-                },
-                {
                   tag: "FIRST WINK",
                   title: "@adaeze received $3.00",
                   sub: "Memo-reconciled · ~1s confirm",
