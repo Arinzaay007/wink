@@ -8,7 +8,7 @@
  *   ⚡ Instant demo wallet — Tempo only, faucet-funded real pathUSD
  *
  * Rails:
- *   - Tempo (42431): transferWithMemo pathUSD direct, ~$0.008 fee
+ *   - Tempo (4217 mainnet / 42431 testnet): transferWithMemo pathUSD direct, ~$0.008 fee
  *   - Base/Eth/Arb/Op/Poly: USDC → Tempo pathUSD via Relay (approve+deposit)
  */
 import { useEffect, useState } from "react";
@@ -25,13 +25,13 @@ import {
   connectWalletAnyChain,
   injectedWalletClient,
 } from "@/lib/connectedWallet";
-import { PATH_USD, TIP20_ABI, TEMPO_NETWORK } from "@/lib/tempo";
+import { PATH_USD, TIP20_ABI, TEMPO_NETWORK, chain as tempoChain } from "@/lib/tempo";
 import type { Address } from "viem";
 
 const PRESETS = [1, 3, 5, 10];
 
 const CHAINS = [
-  { id: 42431, name: "Tempo", symbol: "pathUSD", isTempo: true },
+  { id: tempoChain.id, name: "Tempo", symbol: "pathUSD", isTempo: true },
   { id: 8453, name: "Base", symbol: "USDC", isTempo: false },
   { id: 1, name: "Ethereum", symbol: "USDC", isTempo: false },
   { id: 42161, name: "Arbitrum", symbol: "USDC", isTempo: false },
@@ -72,7 +72,7 @@ export default function TipForm({
   const [useOwn, setUseOwn] = useState(false);
   const [ownAddr, setOwnAddr] = useState<Address | null>(null);
   const [connecting, setConnecting] = useState(false);
-  const [chainId, setChainId] = useState(42431); // default Tempo
+  const [chainId, setChainId] = useState(tempoChain.id); // default Tempo mainnet (4217) or testnet (42431)
 
   const [wallet, setWallet] = useState<DemoWallet | null>(null);
   const [balance, setBalance] = useState<number | null>(null);
@@ -103,8 +103,8 @@ export default function TipForm({
     setError(null);
     setConnecting(true);
     try {
-      // for Tempo direct, force switch to Tempo; for any-chain, connect without switch
-      const addr = isTempo ? await connectInjectedWallet() : await connectWalletAnyChain();
+      // try any-chain connect (injected → WalletConnect fallback) — works on mobile
+      const addr = await connectWalletAnyChain();
       setOwnAddr(addr);
       setUseOwn(true);
       setBalance(await fetchBalance(addr));
@@ -113,15 +113,32 @@ export default function TipForm({
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ address: addr, kind: "connected", label: "my wallet" }),
       }).catch(() => {});
-      // try to detect chain and set selector
+      // try to detect chain and set selector (injected only)
       try {
         const eth = (window as any).ethereum;
-        const chainHex = await eth.request({ method: "eth_chainId" });
-        const cid = parseInt(chainHex, 16);
-        if (CHAINS.some(c => c.id === cid)) setChainId(cid);
+        if (eth) {
+          const chainHex = await eth.request({ method: "eth_chainId" });
+          const cid = parseInt(chainHex as string, 16);
+          if (CHAINS.some(c => c.id === cid)) setChainId(cid as any);
+        }
       } catch {}
+      // if Tempo selected, try to switch (injected wallets)
+      if (isTempo) {
+        try {
+          const eth = (window as any).ethereum;
+          if (eth) {
+            await eth.request({ method: "wallet_switchEthereumChain", params: [{ chainId: `0x${tempoChain.id.toString(16)}` }] });
+          }
+        } catch {}
+      }
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      const msg = e instanceof Error ? e.message : String(e);
+      // if WC not configured, show helpful mobile message
+      if (msg.includes("WalletConnect not configured")) {
+        setError("On phone without MetaMask? Open this page in MetaMask app browser, or set NEXT_PUBLIC_WC_PROJECT_ID for WalletConnect. Tap: Open in MetaMask → https://metamask.app.link/dapp/www.winkpay.xyz/wink/" + handle);
+      } else {
+        setError(msg);
+      }
     } finally {
       setConnecting(false);
     }
@@ -317,7 +334,7 @@ export default function TipForm({
         <div className="text-mono text-[10px] uppercase tracking-[0.16em] text-ink-500 mb-1.5">pay with — any chain in, Tempo out</div>
         <select
           value={chainId}
-          onChange={e => setChainId(Number(e.target.value))}
+          onChange={e => setChainId(Number(e.target.value) as any)}
           className="w-full bg-black border border-line rounded-xl px-3 py-2.5 text-[13px] text-white"
         >
           {CHAINS.map(c => (
@@ -331,32 +348,36 @@ export default function TipForm({
         )}
       </div>
 
-      {/* wallet source */}
+      {/* wallet source — always show connect for mobile */}
       <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
-        {hasOwn && (
-          <button
-            onClick={() => (ownAddr ? setUseOwn(true) : connectOwn())}
-            disabled={connecting}
-            className={`rounded-xl border px-2 py-2.5 font-semibold transition ${
-              useOwn
-                ? "border-wink bg-wink/15 text-wink"
-                : "border-line text-ink-300 hover:border-ink-500"
-            }`}
-          >
-            {connecting ? "Connecting…" : ownAddr ? "👛 My wallet" : "👛 Connect wallet"}
-          </button>
-        )}
+        <button
+          onClick={() => (ownAddr ? setUseOwn(true) : connectOwn())}
+          disabled={connecting}
+          className={`rounded-xl border px-2 py-2.5 font-semibold transition ${
+            useOwn
+              ? "border-wink bg-wink/15 text-wink"
+              : "border-line text-ink-300 hover:border-ink-500"
+          }`}
+        >
+          {connecting ? "Connecting…" : ownAddr ? "👛 My wallet" : "👛 Connect wallet"}
+        </button>
         <button
           onClick={() => { if (isTempo) setUseOwn(false); else setError("Demo wallet only works on Tempo — switch to Tempo chain or connect wallet"); }}
           className={`rounded-xl border px-2 py-2.5 font-semibold transition ${
             !useOwn
               ? "border-wink bg-wink/15 text-wink"
               : "border-line text-ink-300 hover:border-ink-500"
-          } ${hasOwn ? "" : "col-span-2"} ${!isTempo ? "opacity-50" : ""}`}
+          } ${!isTempo ? "opacity-50" : ""}`}
         >
           ⚡ Instant demo wallet {isTempo ? "" : "(Tempo only)"}
         </button>
       </div>
+      {!hasOwn && !ownAddr && (
+        <div className="mt-2 text-[11px] text-ink-500 text-center">
+          On phone? Connect works via WalletConnect. If no popup, open this link in MetaMask app browser:{" "}
+          <a href={`https://metamask.app.link/dapp/www.winkpay.xyz/wink/${handle}`} className="text-wink underline">Open in MetaMask</a>
+        </div>
+      )}
 
       {useOwn && ownAddr && (
         <p className="mt-2 break-all text-center text-[11px] text-ink-500">
