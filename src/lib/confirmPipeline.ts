@@ -14,7 +14,7 @@
  */
 import { and, eq, isNotNull, lt } from "drizzle-orm";
 import type { WinkDb } from "@/db";
-import { transfers, ledgerEntries, payRequests } from "@/db/schema";
+import { transfers, ledgerEntries, payRequests, users, usernames } from "@/db/schema";
 import { verifyTransferOnChain } from "@/lib/tempo";
 import type { Address, Hash } from "viem";
 
@@ -67,7 +67,6 @@ export async function confirmTransfer(
 
   // notification — email recipient that they received funds (non-blocking, best-effort)
   try {
-    const { users, usernames } = await import("@/db/schema");
     const recipient = await db.query.users.findFirst({ where: eq(users.id, transfer.toUserId) });
     const recipientHandle = await db.query.usernames.findFirst({ where: eq(usernames.userId, transfer.toUserId) });
     if (recipient?.email) {
