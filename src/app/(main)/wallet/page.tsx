@@ -7,7 +7,8 @@ import { BgFx } from "@/components/BgFx";
 import { loadDemoWallet, fetchBalance, sendWink } from "@/lib/demoWallet";
 import { isAddress } from "viem";
 import QrScanner from "@/components/QrScanner";
-import { TEMPO_NETWORK } from "@/lib/tempo";
+import { TEMPO_NETWORK, PATH_USD, TIP20_ABI } from "@/lib/tempo";
+import { hasInjectedWallet, connectWalletAnyChain, injectedWalletClient } from "@/lib/connectedWallet";
 
 type Me = { handles: string[]; user?: { displayName?: string }; incoming?: any[] } | null;
 
@@ -62,8 +63,13 @@ export default function WalletPage() {
   const [confirmExport, setConfirmExport] = useState(false);
   const [copiedPk, setCopiedPk] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
+  const [ownAddr, setOwnAddr] = useState<string | null>(null);
+  const [useOwn, setUseOwn] = useState(false);
+  const [connecting, setConnecting] = useState(false);
+  const [hasOwn, setHasOwn] = useState(false);
 
   useEffect(() => {
+    setHasOwn(hasInjectedWallet());
     const w = loadDemoWallet();
     if (w) {
       setDemoAddr(w.address);
@@ -73,18 +79,19 @@ export default function WalletPage() {
     (async () => {
       try {
         // scan for ANY direct deposits first — creates transfer rows + emails
-        fetch("/api/deposits/scan", { method: "POST" }).catch(() => {});
-        const [meRes, portRes] = await Promise.all([
-          fetch("/api/me", { cache: "no-store" }).then(r => r.ok ? r.json() : null).catch(() => null),
-          fetch(`/api/portfolio${w?.address ? `?address=${w.address}` : ""}`).then(r => r.json()).catch(() => null),
-        ]);
+        fetch("/api/deposits/scan", { method: "POST", credentials: "include" }).catch(() => {});
+        const meRes = await fetch("/api/me", { cache: "no-store", credentials: "include" }).then(r => r.ok ? r.json() : null).catch(() => null);
         if (meRes) setMe(meRes);
+        // portfolio: if logged in, fetch all linked wallets (no ?address), else use demo addr
+        const isLoggedIn = !!(meRes?.handles?.length);
+        const portfolioUrl = isLoggedIn ? "/api/portfolio" : (w?.address ? `/api/portfolio?address=${w.address}` : "/api/portfolio");
+        const portRes = await fetch(portfolioUrl, { credentials: "include" }).then(r => r.json()).catch(() => null);
         // if scan found new deposits, refresh me after 2s
         setTimeout(async () => {
           try {
-            const scan = await fetch("/api/deposits/scan", { method: "POST" }).then(r => r.json()).catch(() => null);
+            const scan = await fetch("/api/deposits/scan", { method: "POST", credentials: "include" }).then(r => r.json()).catch(() => null);
             if (scan?.new > 0) {
-              const fresh = await fetch("/api/me", { cache: "no-store" }).then(r => r.json()).catch(() => null);
+              const fresh = await fetch("/api/me", { cache: "no-store", credentials: "include" }).then(r => r.json()).catch(() => null);
               if (fresh) setMe(fresh);
             }
           } catch {}
@@ -181,27 +188,63 @@ export default function WalletPage() {
       if (!h || h.length < 3) throw new Error("Enter a valid @handle");
       const amountMicro = Math.round(parseFloat(winkAmount) * 1_000_000);
       if (!isFinite(amountMicro) || amountMicro < 100_000) throw new Error("Minimum $0.10");
-      const w = loadDemoWallet();
-      if (!w) throw new Error("No wallet — claim a handle first");
-      const bal = await fetchBalance(w.address as any);
-      if (bal * 1_000_000 < amountMicro) throw new Error(`Insufficient — you have $${bal.toFixed(2)} pathUSD on ${TEMPO_NETWORK}. ${TEMPO_NETWORK === "mainnet" ? "Demo wallet has no faucet on mainnet — receive a wink first or use /send with connected wallet (any chain → Tempo)." : ""}`);
+
+      let fromAddress: string;
+      let isDemo = true;
+      if (useOwn && ownAddr) {
+        fromAddress = ownAddr;
+        isDemo = false;
+        const bal = await fetchBalance(ownAddr as any);
+        if (bal * 1_000_000 < amountMicro) throw new Error(`Insufficient — connected wallet has $${bal.toFixed(2)} pathUSD on ${TEMPO_NETWORK}`);
+      } else {
+        const w = loadDemoWallet();
+        if (!w) throw new Error("No demo wallet — claim a handle first or connect wallet");
+        fromAddress = w.address;
+        const bal = await fetchBalance(w.address as any);
+        if (bal * 1_000_000 < amountMicro) throw new Error(`Insufficient — demo wallet has $${bal.toFixed(2)} pathUSD on ${TEMPO_NETWORK}. ${TEMPO_NETWORK === "mainnet" ? "Demo has no faucet on mainnet — receive first or connect wallet." : ""}`);
+      }
+
       setSending(true); setSendStage("signing");
       const prep = await fetch("/api/wink/prepare", {
-        method: "POST", headers: { "content-type": "application/json" },
-        body: JSON.stringify({ handle: h, amountMicro, message: winkMemo || undefined, fromAddress: w.address }),
+        method: "POST", headers: { "content-type": "application/json" }, credentials: "include",
+        body: JSON.stringify({ handle: h, amountMicro, message: winkMemo || undefined, fromAddress }),
       }).then(r => r.json());
       if (!prep.transferId) throw new Error(prep.error ?? "prepare failed — handle not found?");
-      const hash = await sendWink(w, { to: prep.to as any, amountMicro, memoHex: prep.memoHex as any });
+
+      let hash: string;
+      if (!isDemo && ownAddr) {
+        const client = injectedWalletClient(ownAddr as any);
+        hash = await client.writeContract({
+          address: PATH_USD as any,
+          abi: TIP20_ABI as any,
+          functionName: "transferWithMemo",
+          args: [prep.to as any, BigInt(amountMicro), prep.memoHex as any],
+        });
+      } else {
+        const w = loadDemoWallet()!;
+        hash = await sendWink(w, { to: prep.to as any, amountMicro, memoHex: prep.memoHex as any });
+      }
+
       setSendTxHash(hash); setSendStage("confirming");
       let confirmed = false;
       for (let i = 0; i < 12 && !confirmed; i++) {
         await new Promise(r => setTimeout(r, 1000));
-        const c = await fetch("/api/wink/confirm", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ transferId: prep.transferId, txHash: hash }) }).then(r => r.json());
+        const c = await fetch("/api/wink/confirm", { method: "POST", headers: { "content-type": "application/json" }, credentials: "include", body: JSON.stringify({ transferId: prep.transferId, txHash: hash }) }).then(r => r.json());
         if (c.status === "confirmed") confirmed = true;
       }
       if (!confirmed) throw new Error("Broadcast but not verified yet — check dashboard");
       setSendStage("done");
-      fetchBalance(w.address as any).then(b => setDemoTempo(b.toFixed(2))).catch(() => {});
+      if (isDemo) {
+        const w = loadDemoWallet();
+        if (w) fetchBalance(w.address as any).then(b => setDemoTempo(b.toFixed(2))).catch(() => {});
+      } else if (ownAddr) {
+        fetchBalance(ownAddr as any).then(b => setDemoTempo(b.toFixed(2))).catch(() => {});
+      }
+      // refresh portfolio totals
+      try {
+        const portRes = await fetch("/api/portfolio", { credentials: "include" }).then(r => r.json());
+        if (portRes?.wallets) setData(portRes);
+      } catch {}
     } catch (e) {
       setSendError(e instanceof Error ? e.message : String(e));
       setSendStage("error");
@@ -214,31 +257,90 @@ export default function WalletPage() {
       if (!isAddress(toExternal as any)) throw new Error("Invalid 0x address");
       const amountMicro = Math.round(parseFloat(amountExternal) * 1_000_000);
       if (!isFinite(amountMicro) || amountMicro < 100_000) throw new Error("Minimum $0.10");
-      const w = loadDemoWallet();
-      if (!w) throw new Error("No wallet — claim a handle first");
-      const bal = await fetchBalance(w.address as any);
-      if (bal * 1_000_000 < amountMicro) throw new Error(`Insufficient — you have $${bal.toFixed(2)} pathUSD on ${TEMPO_NETWORK}. ${TEMPO_NETWORK === "mainnet" ? "Demo wallet has no faucet on mainnet — receive first or use /send." : ""}`);
+
+      let fromAddress: string;
+      let isDemo = true;
+      if (useOwn && ownAddr) {
+        fromAddress = ownAddr;
+        isDemo = false;
+        const bal = await fetchBalance(ownAddr as any);
+        if (bal * 1_000_000 < amountMicro) throw new Error(`Insufficient — connected wallet has $${bal.toFixed(2)} pathUSD`);
+      } else {
+        const w = loadDemoWallet();
+        if (!w) throw new Error("No demo wallet — claim a handle first or connect wallet");
+        fromAddress = w.address;
+        const bal = await fetchBalance(w.address as any);
+        if (bal * 1_000_000 < amountMicro) throw new Error(`Insufficient — demo wallet has $${bal.toFixed(2)} pathUSD on ${TEMPO_NETWORK}.`);
+      }
+
       setSending(true); setSendStage("signing");
       const prep = await fetch("/api/send/address", {
-        method: "POST", headers: { "content-type": "application/json" },
-        body: JSON.stringify({ toAddress: toExternal, amountMicro, message: msgExternal || undefined, fromAddress: w.address }),
+        method: "POST", headers: { "content-type": "application/json" }, credentials: "include",
+        body: JSON.stringify({ toAddress: toExternal, amountMicro, message: msgExternal || undefined, fromAddress }),
       }).then(r => r.json());
       if (!prep.transferId) throw new Error(prep.error ?? "prepare failed");
-      const hash = await sendWink(w, { to: prep.to as any, amountMicro, memoHex: prep.memoHex as any });
+      let hash: string;
+      if (!isDemo && ownAddr) {
+        const client = injectedWalletClient(ownAddr as any);
+        hash = await client.writeContract({
+          address: PATH_USD as any,
+          abi: TIP20_ABI as any,
+          functionName: "transferWithMemo",
+          args: [prep.to as any, BigInt(amountMicro), prep.memoHex as any],
+        });
+      } else {
+        const w = loadDemoWallet()!;
+        hash = await sendWink(w, { to: prep.to as any, amountMicro, memoHex: prep.memoHex as any });
+      }
       setSendTxHash(hash); setSendStage("confirming");
       let confirmed = false;
       for (let i = 0; i < 12 && !confirmed; i++) {
         await new Promise(r => setTimeout(r, 1000));
-        const c = await fetch("/api/wink/confirm", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ transferId: prep.transferId, txHash: hash }) }).then(r => r.json());
+        const c = await fetch("/api/wink/confirm", { method: "POST", headers: { "content-type": "application/json" }, credentials: "include", body: JSON.stringify({ transferId: prep.transferId, txHash: hash }) }).then(r => r.json());
         if (c.status === "confirmed") confirmed = true;
       }
       if (!confirmed) throw new Error("Broadcast but not verified yet");
       setSendStage("done");
-      fetchBalance(w.address as any).then(b => setDemoTempo(b.toFixed(2))).catch(() => {});
+      if (isDemo) {
+        const w = loadDemoWallet();
+        if (w) fetchBalance(w.address as any).then(b => setDemoTempo(b.toFixed(2))).catch(() => {});
+      }
+      try {
+        const portRes = await fetch("/api/portfolio", { credentials: "include" }).then(r => r.json());
+        if (portRes?.wallets) setData(portRes);
+      } catch {}
     } catch (e) {
       setSendError(e instanceof Error ? e.message : String(e));
       setSendStage("error");
     } finally { setSending(false); }
+  };
+
+  const connectOwnWallet = async () => {
+    setSendError(null);
+    setConnecting(true);
+    try {
+      const addr = await connectWalletAnyChain();
+      setOwnAddr(addr);
+      setUseOwn(true);
+      fetchBalance(addr as any).then(b => setDemoTempo(b.toFixed(2))).catch(() => {});
+      fetch("/api/wallet/link", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ address: addr, kind: "connected", label: "my wallet" }),
+      }).catch(() => {});
+      // refresh portfolio after link
+      setTimeout(async () => {
+        try {
+          const portRes = await fetch("/api/portfolio", { credentials: "include" }).then(r => r.json());
+          if (portRes?.wallets) setData(portRes);
+        } catch {}
+      }, 1000);
+    } catch (e) {
+      setSendError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setConnecting(false);
+    }
   };
 
   const totals = data?.totals;
@@ -442,6 +544,32 @@ export default function WalletPage() {
               </div>
 
               <div className="p-6">
+                {/* wallet source selector — NEW for mobile */}
+                <div className="grid grid-cols-2 gap-2 mb-4 text-xs">
+                  <button
+                    onClick={() => connectOwnWallet()}
+                    disabled={connecting}
+                    className={`rounded-xl border px-2 py-2.5 font-semibold transition ${useOwn && ownAddr ? "border-wink bg-wink/15 text-wink" : "border-line text-ink-300 hover:border-ink-500"}`}
+                  >
+                    {connecting ? "Connecting…" : ownAddr ? `👛 ${ownAddr.slice(0,6)}…` : "👛 Connect wallet"}
+                  </button>
+                  <button
+                    onClick={() => setUseOwn(false)}
+                    className={`rounded-xl border px-2 py-2.5 font-semibold transition ${!useOwn ? "border-wink bg-wink/15 text-wink" : "border-line text-ink-300 hover:border-ink-500"}`}
+                  >
+                    ⚡ Demo {demoAddr ? `${demoAddr.slice(0,6)}…` : "wallet"}
+                  </button>
+                </div>
+                {useOwn && ownAddr && (
+                  <div className="mb-3 text-[11px] text-center text-ink-500 break-all">
+                    Using connected: {ownAddr.slice(0,10)}…{ownAddr.slice(-6)} · {demoTempo ? `$${demoTempo}` : ""} pathUSD
+                  </div>
+                )}
+                {!useOwn && demoAddr && (
+                  <div className="mb-3 text-[11px] text-center text-ink-500">
+                    Using demo: {demoAddr.slice(0,10)}… · ${demoTempo || "0.00"} pathUSD {TEMPO_NETWORK === "mainnet" && Number(demoTempo) === 0 ? "(empty — receive first)" : ""}
+                  </div>
+                )}
                 {sendStage === "done" ? (
                   <div className="text-center py-6">
                     <div className="text-3xl">😉✨</div>
