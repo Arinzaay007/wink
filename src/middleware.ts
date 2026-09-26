@@ -10,6 +10,14 @@ import { NextResponse, type NextRequest } from "next/server";
 const PUBLIC_PATHS = [
   "/waitlist",
   "/api/waitlist/join",
+  "/wink", // payment links must be public — non-wink users scanning QR should land here
+  "/pay", // merchant QR pay pages public
+  "/api/wink", // prepare + confirm for wink payments (guest allowed)
+  "/api/bridge", // quote for any-chain payments (guest)
+  "/api/resolve", // handle -> wallet resolution for payment
+  "/api/send", // send to 0x for guests? keep public for payment flow
+  "/api/fund", // demo wallet faucet
+  "/api/portfolio", // allow guest? filtered no burner
   "/_next",
   "/favicon",
   "/icon.png",
